@@ -377,10 +377,8 @@ $RECYCLE.BIN/
 # ===========================================
 # Project Specific
 # ===========================================
-# Original Python application (keep in repo but ignore build artifacts)
-pitext-travel-dev/__pycache__/
-pitext-travel-dev/*.pyc
-pitext-travel-dev/.env
+# Original Python application (completely ignore this folder)
+pitext-travel-dev/
 
 # Migration artifacts
 *.backup
