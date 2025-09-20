@@ -18,7 +18,6 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('')
 
   useEffect(() => {
-    // Get Google Maps API key from backend
     ApiConfig.fetchJson<{ google_maps_api_key: string }>('/api/config')
       .then(data => {
         if (data.google_maps_api_key) {
@@ -35,16 +34,13 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
   useEffect(() => {
     if (!googleMapsApiKey || mapLoaded) return
 
-    // Check if Google Maps is already loaded
     if (window.google && window.google.maps) {
       initializeMap()
       return
     }
 
-    // Check if script is already loading or loaded
     const existingScript = document.querySelector(`script[src*="maps.googleapis.com"]`)
     if (existingScript) {
-      // Wait for it to load and then initialize
       const checkLoaded = () => {
         if (window.google && window.google.maps) {
           initializeMap()
@@ -56,48 +52,47 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
       return
     }
 
-    // Load Google Maps script directly (no cleanup needed)
     const script = document.createElement('script')
     script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=geometry&v=beta&callback=initMap`
     script.async = true
     script.defer = true
-    
-    // Set up the callback
+
     window.initMap = initializeMap
-    
+
     script.onerror = () => {
       console.error('Failed to load Google Maps')
     }
-    
-    document.head.appendChild(script)
 
-    // No cleanup function - let browser handle script lifecycle
+    document.head.appendChild(script)
   }, [googleMapsApiKey, mapLoaded, onMapReady])
 
   const initializeMap = () => {
-    if (mapRef.current && window.google && window.google.maps) {
-      const map = new window.google.maps.Map(mapRef.current, {
-        zoom: 10,
-        center: { lat: 48.8566, lng: 2.3522 }, // Paris default
-        mapTypeControl: true,
-        streetViewControl: true,
-        fullscreenControl: true,
-        zoomControl: true,
-      })
+    if (!mapRef.current || !window.google || !window.google.maps) return
 
-      // Store map instance globally for other components
-      ;(window as any).travelMap = map
-      setMapLoaded(true)
-      onMapReady()
-    }
+    mapRef.current.innerHTML = ''
+
+    const map = new window.google.maps.Map(mapRef.current, {
+      zoom: 10,
+      center: { lat: 48.8566, lng: 2.3522 },
+      mapTypeControl: true,
+      streetViewControl: true,
+      fullscreenControl: true,
+      zoomControl: true,
+    })
+
+    ;(window as any).travelMap = map
+    setMapLoaded(true)
+    onMapReady()
   }
 
   return (
-    <div id="map" ref={mapRef}>
+    <div className="map-wrapper">
+      <div id="map" ref={mapRef} aria-label="Travel map" />
+
       {!mapLoaded && (
-        <div className="loading">
-          <p>🗺️ Ready to plan your trip?</p>
-          <p><small>Enter a city & days, then click <em>Launch Trip</em>.</small></p>
+        <div className="map-loading" role="status">
+          <p>Ready to plan your trip?</p>
+          <p><small>Enter a city and days, then click <em>Launch Trip</em>.</small></p>
         </div>
       )}
     </div>

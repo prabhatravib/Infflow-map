@@ -13,23 +13,22 @@ export const ChatPanel: React.FC = () => {
   const chatPanelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // Scroll to bottom when new messages arrive
     if (chatPanelRef.current) {
       chatPanelRef.current.scrollTop = chatPanelRef.current.scrollHeight
     }
   }, [messages])
 
   useEffect(() => {
-    // Listen for voice messages from WebSocket
-    const handleVoiceMessage = (event: CustomEvent) => {
-      const { type, content } = event.detail
+    const handleVoiceMessage = (event: Event) => {
+      const voiceEvent = event as CustomEvent<{ type: 'user' | 'assistant'; content: string }>
+      const { type, content } = voiceEvent.detail
       addMessage(type, content)
     }
 
-    window.addEventListener('voiceMessage', handleVoiceMessage as EventListener)
-    
+    window.addEventListener('voiceMessage', handleVoiceMessage)
+
     return () => {
-      window.removeEventListener('voiceMessage', handleVoiceMessage as EventListener)
+      window.removeEventListener('voiceMessage', handleVoiceMessage)
     }
   }, [])
 
@@ -40,7 +39,7 @@ export const ChatPanel: React.FC = () => {
       content,
       timestamp: new Date(),
     }
-    
+
     setMessages(prev => [...prev, newMessage])
   }
 
@@ -57,19 +56,20 @@ export const ChatPanel: React.FC = () => {
   }
 
   return (
-    <aside 
-      id="chat-panel" 
+    <aside
+      id="chat-panel"
       className={`chat-panel ${isMinimized ? 'minimized' : ''}`}
       ref={chatPanelRef}
       aria-live="polite"
     >
-      <button 
-        id="chat-minimize-btn" 
-        className="chat-minimize-btn" 
+      <button
+        id="chat-minimize-btn"
+        className="chat-minimize-btn"
         onClick={toggleMinimize}
-        title={isMinimized ? "Expand chat" : "Minimize chat"}
+        title={isMinimized ? 'Expand chat' : 'Minimize chat'}
+        aria-expanded={!isMinimized}
       >
-        {isMinimized ? '+' : '−'}
+        {isMinimized ? '+' : '-'}
       </button>
 
       {!isMinimized && (
@@ -79,9 +79,9 @@ export const ChatPanel: React.FC = () => {
               {message.content}
             </div>
           ))}
-          
+
           {messages.length > 0 && (
-            <button 
+            <button
               onClick={clearMessages}
               style={{
                 position: 'absolute',

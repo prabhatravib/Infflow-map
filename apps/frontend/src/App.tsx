@@ -12,18 +12,19 @@ function App() {
   const [mapReady, setMapReady] = useState(false)
 
   useEffect(() => {
-    // Load Socket.IO
-    SocketIOLoader.load().then(() => {
-      setSocketLoaded(true)
-    }).catch((error) => {
-      console.error('Failed to load Socket.IO:', error)
-    })
+    SocketIOLoader.load()
+      .then(() => {
+        setSocketLoaded(true)
+      })
+      .catch((error) => {
+        console.error('Failed to load Socket.IO:', error)
+      })
   }, [])
 
   if (!socketLoaded) {
     return (
       <div className="loading">
-        <p>🗺️ Loading Infflow Map...</p>
+        <p>Loading Infflow Map...</p>
         <p><small>Initializing voice interface...</small></p>
       </div>
     )
@@ -31,7 +32,6 @@ function App() {
 
   return (
     <div className="app">
-      {/* SVG Definitions for Hexagon with Rounded Corners */}
       <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
           <clipPath id="roundedHex" clipPathUnits="objectBoundingBox">
@@ -46,19 +46,10 @@ function App() {
         </defs>
       </svg>
 
-      {/* Map Interface */}
       <MapInterface onMapReady={() => setMapReady(true)} />
-
-      {/* Voice Interface */}
       <VoiceInterface />
-
-      {/* Chat Panel */}
       <ChatPanel />
-
-      {/* Day Controls */}
       <DayControls />
-
-      {/* Voice Initializer */}
       {mapReady && <VoiceInitializer />}
     </div>
   )
