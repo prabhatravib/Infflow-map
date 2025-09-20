@@ -109,9 +109,6 @@ export const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
   return (
     <div className="hexagon-interface">
       <div className="hexagon-content">
-        <div className="hexagon-header">
-          Voice-Enabled Travel Planning
-        </div>
 
         <button 
           className={`hex-mic-button ${isListening ? 'listening' : ''}`}
