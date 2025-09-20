@@ -1,8 +1,12 @@
-# PiText Travel - Cloudflare Migration
+# Infflow-Map
 
-This is the complete migration of PiText Travel from Render to Cloudflare Workers + Durable Objects architecture.
+An AI-powered travel planning application with voice interface, real-time audio processing, and interactive mapping capabilities.
 
-## Architecture Overview
+## Overview
+
+Infflow-Map combines cutting-edge AI technology with intuitive voice interaction to help you plan and explore travel destinations. The application features an animated hexagon character that serves as your personal travel assistant, capable of understanding voice commands and providing real-time travel recommendations.
+
+## Architecture
 
 The application consists of three main services:
 
@@ -10,7 +14,7 @@ The application consists of three main services:
 2. **Backend Service** (`apps/backend/`) - TypeScript + Cloudflare Workers  
 3. **Voice Service** (`apps/voice/`) - TypeScript + Cloudflare Durable Objects
 
-## Features Maintained
+## Features
 
 ✅ **Voice Interface** - Animated hexagon character with OpenAI Realtime API integration  
 ✅ **Real-time Audio** - PCM16 audio processing and streaming  
@@ -86,7 +90,7 @@ After deployment, update the backend service with the voice service URL:
 ```bash
 cd apps/backend
 wrangler secret put VOICE_SERVICE_URL
-# Enter: https://pitext-travel-voice.your-subdomain.workers.dev
+# Enter: https://Infflow-Map-voice.your-subdomain.workers.dev
 ```
 
 ## Development
@@ -158,17 +162,17 @@ curl http://localhost:8788/health
 - `GET /session/{id}/stats` - Session statistics
 - `GET /health` - Health check
 
-## Migration Benefits
+## Performance Features
 
-### Performance Improvements
-- **10x faster** - Native execution vs WebAssembly
-- **Global edge** - Cloudflare's worldwide network
-- **Auto-scaling** - Serverless architecture
+### Optimized Performance
+- **Edge computing** - Cloudflare's global network for low latency
+- **Auto-scaling** - Serverless architecture that scales automatically
+- **Fast execution** - Native runtime performance
 
-### Cost Optimization
+### Cost Efficiency
 - **Pay-per-use** - Only pay for actual usage
 - **No idle costs** - No running servers when idle
-- **Bandwidth savings** - Edge caching and optimization
+- **Bandwidth optimization** - Edge caching and content delivery
 
 ### Developer Experience
 - **Modern tooling** - TypeScript, Vite, Wrangler
@@ -210,4 +214,4 @@ For issues or questions:
 
 ---
 
-*This migration maintains 100% feature parity with the original Render deployment while providing significant performance and cost benefits.*
+*Infflow-Map provides a seamless, AI-powered travel planning experience with voice interaction and real-time mapping capabilities.*

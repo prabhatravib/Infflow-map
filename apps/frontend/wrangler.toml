@@ -9,7 +9,7 @@ name = "infflow-map"
 name = "infflow-map-staging"
 
 # Static assets configuration
-[[assets]]
+[assets]
 directory = "dist"
 binding = "ASSETS"
 

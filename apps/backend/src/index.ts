@@ -148,7 +148,7 @@ async function handleChat(request: Request, env: Env, corsHeaders: Record<string
 
 async function handleVoiceProxy(request: Request, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
   // Proxy voice-related requests to the voice service
-  const voiceServiceUrl = env.VOICE_SERVICE_URL || 'https://pitext-travel-voice.your-subdomain.workers.dev'
+  const voiceServiceUrl = env.VOICE_SERVICE_URL || 'https://infflow-map-voice.prabhatravib.workers.dev'
   
   try {
     const modifiedRequest = new Request(request.url.replace('/api/voice', ''), {

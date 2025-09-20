@@ -69,9 +69,14 @@ if (-not $SkipDependencies -and -not (Test-Path "node_modules")) {
 }
 
 # Deploy voice service
-wrangler deploy
-$VoiceUrl = (wrangler deployments list --format json | ConvertFrom-Json)[0].url
-Write-Success "Voice service deployed at: $VoiceUrl"
+$VoiceDeployOutput = wrangler deploy --env=""
+$VoiceUrl = ($VoiceDeployOutput | Select-String "https://.*\.workers\.dev" | Select-Object -First 1).Matches[0].Value
+if ($VoiceUrl) {
+    Write-Success "Voice service deployed at: $VoiceUrl"
+} else {
+    Write-Warning "Voice service deployed but URL not extracted"
+    $VoiceUrl = "https://infflow-map-voice.prabhatravib.workers.dev"
+}
 
 # 2. Deploy Backend Service
 Write-Status "Deploying Backend Service..."
@@ -91,13 +96,18 @@ if (-not $SkipDependencies -and -not (Test-Path "node_modules")) {
 # Set voice service URL
 if (-not $SkipSecrets) {
     Write-Status "Setting voice service URL..."
-    $VoiceUrl | wrangler secret put VOICE_SERVICE_URL
+    $VoiceUrl | wrangler secret put VOICE_SERVICE_URL --env=""
 }
 
 # Deploy backend service
-wrangler deploy
-$BackendUrl = (wrangler deployments list --format json | ConvertFrom-Json)[0].url
-Write-Success "Backend service deployed at: $BackendUrl"
+$BackendDeployOutput = wrangler deploy --env=""
+$BackendUrl = ($BackendDeployOutput | Select-String "https://.*\.workers\.dev" | Select-Object -First 1).Matches[0].Value
+if ($BackendUrl) {
+    Write-Success "Backend service deployed at: $BackendUrl"
+} else {
+    Write-Warning "Backend service deployed but URL not extracted"
+    $BackendUrl = "https://infflow-map-backend.prabhatravib.workers.dev"
+}
 
 # 3. Deploy Frontend Service
 Write-Status "Deploying Frontend Service..."
@@ -119,9 +129,14 @@ Write-Status "Building frontend..."
 npm run build
 
 # Deploy frontend service
-wrangler deploy
-$FrontendUrl = (wrangler deployments list --format json | ConvertFrom-Json)[0].url
-Write-Success "Frontend service deployed at: $FrontendUrl"
+$FrontendDeployOutput = wrangler deploy --env=""
+$FrontendUrl = ($FrontendDeployOutput | Select-String "https://.*\.workers\.dev" | Select-Object -First 1).Matches[0].Value
+if ($FrontendUrl) {
+    Write-Success "Frontend service deployed at: $FrontendUrl"
+} else {
+    Write-Warning "Frontend service deployed but URL not extracted"
+    $FrontendUrl = "https://infflow-map.prabhatravib.workers.dev"
+}
 
 # Summary
 Write-Host ""

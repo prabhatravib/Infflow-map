@@ -1,5 +1,5 @@
 {
-  "name": "pitext-travel-frontend",
+  "name": "infflow-map-frontend",
   "version": "1.0.0",
   "description": "PiText Travel Frontend - Voice-enabled travel planning interface",
   "type": "module",
@@ -12,7 +12,8 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "socket.io-client": "^4.7.4"
+    "socket.io-client": "^4.7.4",
+    "@cloudflare/kv-asset-handler": "^0.3.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

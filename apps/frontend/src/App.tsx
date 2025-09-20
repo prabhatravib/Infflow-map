@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MapInterface } from './components/MapInterface'
 import { VoiceInterface } from './components/VoiceInterface'
 import { ChatPanel } from './components/ChatPanel'

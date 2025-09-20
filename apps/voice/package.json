@@ -1,5 +1,5 @@
 {
-  "name": "pitext-travel-voice",
+  "name": "infflow-map-voice",
   "version": "1.0.0",
   "description": "PiText Travel Voice Service - WebSocket and audio processing",
   "type": "module",

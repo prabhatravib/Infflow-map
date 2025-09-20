@@ -13,6 +13,11 @@ name = "infflow-map-voice-staging"
 name = "VOICE_SESSION"
 class_name = "VoiceSession"
 
+# Durable Objects migrations
+[[migrations]]
+tag = "v1"
+new_classes = ["VoiceSession"]
+
 # Environment variables
 [vars]
 ENVIRONMENT = "production"
