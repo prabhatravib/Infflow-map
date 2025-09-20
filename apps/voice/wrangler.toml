@@ -1,12 +1,12 @@
-name = "pitext-travel-voice"
+name = "infflow-map-voice"
 compatibility_date = "2024-01-01"
 main = "src/index.ts"
 
 [env.production]
-name = "pitext-travel-voice"
+name = "infflow-map-voice"
 
 [env.staging]
-name = "pitext-travel-voice-staging"
+name = "infflow-map-voice-staging"
 
 # Durable Objects
 [[durable_objects.bindings]]

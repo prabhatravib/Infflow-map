@@ -51,7 +51,7 @@ try {
     exit 1
 }
 
-Write-Status "Deploying services in order: Voice → Backend → Frontend"
+Write-Status "Deploying Infflow Map services in order: Voice → Backend → Frontend"
 
 # 1. Deploy Voice Service
 Write-Status "Deploying Voice Service..."
@@ -136,7 +136,7 @@ Write-Warning "Don't forget to set up your API keys:"
 Write-Host "  wrangler secret put OPENAI_API_KEY"
 Write-Host "  wrangler secret put GOOGLE_MAPS_API_KEY"
 Write-Host ""
-Write-Status "Your PiText Travel application is now live on Cloudflare!"
+Write-Status "Your Infflow Map application is now live on Cloudflare!"
 
 # Return to original directory
 Set-Location "../.."
