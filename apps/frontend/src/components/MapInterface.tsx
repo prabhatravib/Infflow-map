@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { ApiConfig } from '../utils/apiConfig'
 
 interface MapInterfaceProps {
   onMapReady: () => void
@@ -18,8 +19,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
 
   useEffect(() => {
     // Get Google Maps API key from backend
-    fetch('/api/config')
-      .then(response => response.json())
+    ApiConfig.fetchJson<{ google_maps_api_key: string }>('/api/config')
       .then(data => {
         if (data.google_maps_api_key) {
           setGoogleMapsApiKey(data.google_maps_api_key)
@@ -35,45 +35,62 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
   useEffect(() => {
     if (!googleMapsApiKey || mapLoaded) return
 
-    // Load Google Maps script
+    // Check if Google Maps is already loaded
+    if (window.google && window.google.maps) {
+      initializeMap()
+      return
+    }
+
+    // Check if script is already loading or loaded
+    const existingScript = document.querySelector(`script[src*="maps.googleapis.com"]`)
+    if (existingScript) {
+      // Wait for it to load and then initialize
+      const checkLoaded = () => {
+        if (window.google && window.google.maps) {
+          initializeMap()
+        } else {
+          setTimeout(checkLoaded, 100)
+        }
+      }
+      checkLoaded()
+      return
+    }
+
+    // Load Google Maps script directly (no cleanup needed)
     const script = document.createElement('script')
     script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=geometry&v=beta&callback=initMap`
     script.async = true
     script.defer = true
-
+    
     // Set up the callback
-    window.initMap = () => {
-      if (mapRef.current) {
-        const map = new window.google.maps.Map(mapRef.current, {
-          zoom: 10,
-          center: { lat: 48.8566, lng: 2.3522 }, // Paris default
-          mapTypeControl: true,
-          streetViewControl: true,
-          fullscreenControl: true,
-          zoomControl: true,
-        })
-
-        // Store map instance globally for other components
-        ;(window as any).travelMap = map
-        setMapLoaded(true)
-        onMapReady()
-      }
-    }
-
+    window.initMap = initializeMap
+    
     script.onerror = () => {
       console.error('Failed to load Google Maps')
     }
-
+    
     document.head.appendChild(script)
 
-    return () => {
-      // Cleanup
-      if (document.head.contains(script)) {
-        document.head.removeChild(script)
-      }
-      delete window.initMap
-    }
+    // No cleanup function - let browser handle script lifecycle
   }, [googleMapsApiKey, mapLoaded, onMapReady])
+
+  const initializeMap = () => {
+    if (mapRef.current && window.google && window.google.maps) {
+      const map = new window.google.maps.Map(mapRef.current, {
+        zoom: 10,
+        center: { lat: 48.8566, lng: 2.3522 }, // Paris default
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true,
+        zoomControl: true,
+      })
+
+      // Store map instance globally for other components
+      ;(window as any).travelMap = map
+      setMapLoaded(true)
+      onMapReady()
+    }
+  }
 
   return (
     <div id="map" ref={mapRef}>

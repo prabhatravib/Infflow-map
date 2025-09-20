@@ -15,3 +15,7 @@ ENVIRONMENT = "production"
 # Secrets (set via wrangler secret put)
 # OPENAI_API_KEY
 # GOOGLE_MAPS_API_KEY
+
+# Observability settings
+[observability.logs]
+enabled = true

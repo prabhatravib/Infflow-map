@@ -1,6 +1,15 @@
 import { useState } from 'react'
+import { ApiConfig } from '../utils/apiConfig'
 
 interface VoiceInterfaceProps {}
+
+interface ItineraryResponse {
+  city: string
+  days: number
+  itinerary: any[]
+  locations: any[]
+  tips: string[]
+}
 
 export const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
   const [city, setCity] = useState('Paris')
@@ -19,22 +28,13 @@ export const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
     setError(null)
 
     try {
-      const response = await fetch('/api/itinerary', {
+      const data = await ApiConfig.fetchJson<ItineraryResponse>('/api/itinerary', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           city: city.trim(),
           days: days,
         }),
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate itinerary')
-      }
-
-      const data = await response.json()
       
       // Store itinerary data in session storage for other components
       sessionStorage.setItem('currentItinerary', JSON.stringify(data))

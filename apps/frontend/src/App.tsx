@@ -23,7 +23,7 @@ function App() {
   if (!socketLoaded) {
     return (
       <div className="loading">
-        <p>🗺️ Loading PiText Travel...</p>
+        <p>🗺️ Loading Infflow Map...</p>
         <p><small>Initializing voice interface...</small></p>
       </div>
     )

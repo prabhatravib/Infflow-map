@@ -24,3 +24,7 @@ ENVIRONMENT = "production"
 
 # Secrets (set via wrangler secret put)
 # OPENAI_API_KEY
+
+# Observability settings
+[observability.logs]
+enabled = true

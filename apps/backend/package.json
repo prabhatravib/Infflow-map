@@ -1,7 +1,7 @@
 {
   "name": "infflow-map-backend",
   "version": "1.0.0",
-  "description": "PiText Travel Backend - API orchestration and AI integration",
+  "description": "Infflow Map Backend - API orchestration and AI integration",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",

@@ -16,3 +16,7 @@ binding = "ASSETS"
 # Environment variables
 [vars]
 ENVIRONMENT = "production"
+
+# Observability settings
+[observability.logs]
+enabled = true

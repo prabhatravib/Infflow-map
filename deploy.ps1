@@ -146,11 +146,6 @@ Write-Host "Service URLs:"
 Write-Host "  Frontend:  $FrontendUrl"
 Write-Host "  Backend:   $BackendUrl"
 Write-Host "  Voice:     $VoiceUrl"
-Write-Host ""
-Write-Warning "Don't forget to set up your API keys:"
-Write-Host "  wrangler secret put OPENAI_API_KEY"
-Write-Host "  wrangler secret put GOOGLE_MAPS_API_KEY"
-Write-Host ""
 Write-Status "Your Infflow Map application is now live on Cloudflare!"
 
 # Return to original directory

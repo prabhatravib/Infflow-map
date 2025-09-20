@@ -1,7 +1,7 @@
 {
   "name": "infflow-map-frontend",
   "version": "1.0.0",
-  "description": "PiText Travel Frontend - Voice-enabled travel planning interface",
+  "description": "Infflow Map Frontend - Voice-enabled travel planning interface",
   "type": "module",
   "scripts": {
     "dev": "vite",
