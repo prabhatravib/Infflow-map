@@ -1,0 +1,18 @@
+name = "pitext-travel-frontend"
+compatibility_date = "2024-01-01"
+main = "src/index.ts"
+
+[env.production]
+name = "pitext-travel-frontend"
+
+[env.staging]
+name = "pitext-travel-frontend-staging"
+
+# Static assets configuration
+[[assets]]
+directory = "dist"
+binding = "ASSETS"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"

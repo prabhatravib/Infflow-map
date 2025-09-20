@@ -1,0 +1,20 @@
+{
+  "name": "pitext-travel-backend",
+  "version": "1.0.0",
+  "description": "PiText Travel Backend - API orchestration and AI integration",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "openai": "^4.20.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "wrangler": "^3.22.1"
+  }
+}

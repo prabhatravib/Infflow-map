@@ -1,0 +1,76 @@
+# Wrangler ignore file
+# Exclude directories and files from Cloudflare Workers deployment
+
+# Original Python application (Render deployment)
+pitext-travel-dev/
+
+# Python cache and build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# Git
+.git/
+.gitignore
+
+# Documentation that shouldn't be deployed
+*.md
+!README.md
+
+# Migration documentation
+render-to-cloudflare migration.md
+MIGRATION_SUMMARY.md
+
+# Deployment scripts (not needed in Workers)
+deploy.sh
+deploy.ps1
