@@ -4,6 +4,7 @@ import { VoiceInterface } from './components/VoiceInterface'
 import { ChatPanel } from './components/ChatPanel'
 import { DayControls } from './components/DayControls'
 import { VoiceInitializer } from './components/VoiceInitializer'
+import { VoiceWorkerFrame } from './components/VoiceWorkerFrame'
 import { SocketIOLoader } from './utils/SocketIOLoader'
 import './App.css'
 
@@ -51,6 +52,7 @@ function App() {
       <ChatPanel />
       <DayControls />
       {mapReady && <VoiceInitializer />}
+      <VoiceWorkerFrame />
     </div>
   )
 }

@@ -16,6 +16,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
   const mapRef = useRef<HTMLDivElement>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string>('')
+  const styleMapId = 'c3bdabd61cc122adbb5aee9d'
 
   useEffect(() => {
     ApiConfig.fetchJson<{ google_maps_api_key: string }>('/api/config')
@@ -53,7 +54,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
     }
 
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=geometry&v=beta&callback=initMap`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=geometry&v=beta&map_ids=${styleMapId}&callback=initMap`
     script.async = true
     script.defer = true
 
@@ -72,12 +73,17 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
     mapRef.current.innerHTML = ''
 
     const map = new window.google.maps.Map(mapRef.current, {
+      mapId: styleMapId,
       zoom: 10,
       center: { lat: 48.8566, lng: 2.3522 },
-      mapTypeControl: true,
-      streetViewControl: true,
-      fullscreenControl: true,
-      zoomControl: true,
+      disableDefaultUI: true,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+      zoomControl: false,
+      rotateControl: false,
+      tiltControl: false,
+      scaleControl: false,
     })
 
     ;(window as any).travelMap = map

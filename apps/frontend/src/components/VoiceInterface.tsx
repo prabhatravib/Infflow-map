@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ApiConfig } from '../utils/apiConfig'
+import { markTripPlanPending, sendTripPlanToVoiceWorker } from '../utils/voiceWorker'
 
 interface VoiceInterfaceProps {}
 
@@ -26,6 +27,7 @@ export const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
 
     setIsProcessing(true)
     setError(null)
+    markTripPlanPending()
 
     try {
       const data = await ApiConfig.fetchJson<ItineraryResponse>('/api/itinerary', {
@@ -35,7 +37,7 @@ export const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
           days: days,
         }),
       })
-      
+
       // Store itinerary data in session storage for other components
       sessionStorage.setItem('currentItinerary', JSON.stringify(data))
       sessionStorage.setItem('currentCity', city)
@@ -45,6 +47,10 @@ export const VoiceInterface: React.FC<VoiceInterfaceProps> = () => {
       if ((window as any).travelMap && data.locations) {
         updateMapWithItinerary(data.locations)
       }
+
+      sendTripPlanToVoiceWorker(data, {
+        prompt: `Route planning context for ${city} (${days} day${days > 1 ? 's' : ''})`,
+      })
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
