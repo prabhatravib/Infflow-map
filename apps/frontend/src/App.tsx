@@ -1,36 +1,11 @@
-import { useEffect, useState } from 'react'
 import { MapInterface } from './components/MapInterface'
-import { VoiceInterface } from './components/VoiceInterface'
 import { ChatPanel } from './components/ChatPanel'
-import { DayControls } from './components/DayControls'
+import { TripControls } from './components/TripControls'
 import { VoiceInitializer } from './components/VoiceInitializer'
 import { VoiceWorkerFrame } from './components/VoiceWorkerFrame'
-import { SocketIOLoader } from './utils/SocketIOLoader'
 import './App.css'
 
 function App() {
-  const [socketLoaded, setSocketLoaded] = useState(false)
-  const [mapReady, setMapReady] = useState(false)
-
-  useEffect(() => {
-    SocketIOLoader.load()
-      .then(() => {
-        setSocketLoaded(true)
-      })
-      .catch((error) => {
-        console.error('Failed to load Socket.IO:', error)
-      })
-  }, [])
-
-  if (!socketLoaded) {
-    return (
-      <div className="loading">
-        <p>Loading Infflow Map...</p>
-        <p><small>Initializing voice interface...</small></p>
-      </div>
-    )
-  }
-
   return (
     <div className="app">
       <svg width="0" height="0" style={{ position: 'absolute' }}>
@@ -47,11 +22,10 @@ function App() {
         </defs>
       </svg>
 
-      <MapInterface onMapReady={() => setMapReady(true)} />
-      <VoiceInterface />
+      <MapInterface onMapReady={() => {}} />
       <ChatPanel />
-      <DayControls />
-      {mapReady && <VoiceInitializer />}
+      <TripControls />
+      <VoiceInitializer />
       <VoiceWorkerFrame />
     </div>
   )

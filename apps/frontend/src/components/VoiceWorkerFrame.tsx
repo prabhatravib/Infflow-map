@@ -9,7 +9,7 @@ import {
   TripPlanStatus,
 } from '../utils/voiceWorker'
 
-export const VoiceWorkerFrame: React.FC = () => {
+export function VoiceWorkerFrame() {
   const [enabled, setEnabled] = useState<boolean>(() => isVoiceWorkerEnabled())
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [status, setStatus] = useState<TripPlanStatus>(() => getTripPlanStatus())
@@ -87,4 +87,3 @@ export const VoiceWorkerFrame: React.FC = () => {
     </div>
   )
 }
-

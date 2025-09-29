@@ -192,4 +192,3 @@ export const VOICE_WORKER_EVENTS = {
   enabled: EVENT_ENABLED,
   status: EVENT_STATUS,
 } as const
-

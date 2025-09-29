@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
-export const VoiceInitializer: React.FC = () => {
+export function VoiceInitializer() {
   const initialized = useRef(false)
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export const VoiceInitializer: React.FC = () => {
       socket.on('transcript', (data: any) => {
         if (data.text) {
           const event = new CustomEvent('voiceMessage', {
-            detail: { type: 'assistant', content: data.text }
+            detail: { type: 'assistant', content: data.text },
           })
           window.dispatchEvent(event)
         }
@@ -70,7 +70,6 @@ export const VoiceInitializer: React.FC = () => {
       })
 
       ;(window as any).voiceSocket = socket
-
     } catch (error) {
       console.error('Failed to initialize WebSocket connection:', error)
     }
@@ -88,7 +87,7 @@ export const VoiceInitializer: React.FC = () => {
       const audioUrl = URL.createObjectURL(audioBlob)
 
       const audio = new Audio(audioUrl)
-      audio.play().catch(error => {
+      audio.play().catch((error) => {
         console.error('Failed to play audio:', error)
       })
 
