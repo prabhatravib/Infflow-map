@@ -11,7 +11,6 @@ import { clearDayControls, toggleDayVisibility } from './dayControls'
 import { estimateDrivingTime, getColourForDay, toLatLngLiteral, LatLngLiteral } from './utils'
 import { getPendingTrip, setPendingTrip } from './tripState'
 import { centerMapOnCity, centerMapOnCoordinates } from './mapCentering'
-
 export function clearTripRender() {
   MAP_STATE.markers.forEach((marker) => {
     if (marker) {
@@ -278,21 +277,55 @@ function setupDayControls(trip: TripData) {
     container = document.createElement('div')
     container.id = containerId
     container.className = 'day-controls'
-    const appRoot = document.querySelector('.app')
-    appRoot?.appendChild(container)
+    document.body.appendChild(container)
+  } else if (container.parentElement !== document.body) {
+    document.body.appendChild(container)
   }
 
-  trip.days.forEach((day, index) => {
-    const wrapper = document.createElement('div')
-    wrapper.className = 'day-controls__item'
+  Object.assign(container.style, {
+    position: 'fixed',
+    top: '1.5rem',
+    right: '1.5rem',
+    left: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.25rem',
+    padding: '0.4rem 0.55rem',
+    borderRadius: '12px',
+    background: 'rgba(17, 24, 39, 0.82)',
+    boxShadow: '0 8px 20px rgba(15, 23, 42, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+    color: '#f9fafb',
+    width: '160px',
+    pointerEvents: 'auto',
+    zIndex: '1100',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontSize: '0.85rem',
+  })
 
-    const label = document.createElement('label')
-    label.textContent = day.label || `Day ${index + 1}`
-    label.style.color = getColourForDay(index)
+  trip.days.forEach((day, index) => {
+    const wrapper = document.createElement('label')
+    wrapper.style.display = 'flex'
+    wrapper.style.alignItems = 'center'
+    wrapper.style.justifyContent = 'space-between'
+    wrapper.style.gap = '0.25rem'
+    wrapper.style.width = '100%'
+    wrapper.style.cursor = 'pointer'
+
+    const text = document.createElement('span')
+    text.textContent = day.label || `Day ${index + 1}`
+    text.style.color = getColourForDay(index)
+    text.style.fontWeight = '600'
 
     const checkbox = document.createElement('input')
     checkbox.type = 'checkbox'
     checkbox.checked = index === 0
+    Object.assign(checkbox.style, {
+      width: '16px',
+      height: '16px',
+      margin: '0',
+      cursor: 'pointer',
+      flexShrink: '0',
+    })
 
     MAP_STATE.dayVisibility.set(index, index === 0)
 
@@ -301,7 +334,7 @@ function setupDayControls(trip: TripData) {
       toggleDayCamera(index, checkbox.checked)
     })
 
-    wrapper.appendChild(label)
+    wrapper.appendChild(text)
     wrapper.appendChild(checkbox)
     container?.appendChild(wrapper)
   })

@@ -2,6 +2,7 @@ import { KeyboardEvent, useState } from 'react'
 import { ApiConfig } from '../utils/apiConfig'
 import { renderTripOnMap } from '../utils/mapRenderer'
 import { TripData, TripDay, TripStop } from '../utils/tripTypes'
+import styles from './TripControls.module.css'
 
 const DEFAULT_CITY = 'Paris'
 const DEFAULT_DAYS = 3
@@ -86,15 +87,15 @@ export function TripControls() {
 
   return (
     <section
-      className={`trip-controls${isCollapsed ? ' trip-controls--collapsed' : ''}`}
+      className={`${styles.tripControls}${isCollapsed ? ` ${styles.tripControlsCollapsed}` : ''}`}
       aria-label="Trip planner controls"
     >
-      <div className="trip-controls__body">
-        <header className="trip-controls__header">
-          <h2 className="trip-controls__title">Trip Planner</h2>
+      <div className={styles.body}>
+        <header className={styles.header}>
+          <h2 className={styles.title}>Trip Planner</h2>
           <button
             type="button"
-            className="trip-controls__toggle"
+            className={styles.toggle}
             onClick={toggleCollapsed}
             aria-label={toggleLabel}
             aria-expanded={!isCollapsed}
@@ -106,9 +107,9 @@ export function TripControls() {
 
         {!isCollapsed && (
           <>
-            <div className="trip-controls__inputs">
+            <div className={styles.inputs}>
               <input
-                className="trip-controls__input trip-controls__input--city"
+                className={`${styles.input} ${styles.inputCity}`}
                 type="text"
                 placeholder="City"
                 value={city}
@@ -118,7 +119,7 @@ export function TripControls() {
                 aria-label="City"
               />
               <input
-                className="trip-controls__input trip-controls__input--days"
+                className={`${styles.input} ${styles.inputDays}`}
                 type="number"
                 min={MIN_DAYS}
                 max={MAX_DAYS}
@@ -129,20 +130,22 @@ export function TripControls() {
               />
             </div>
 
-            <div className="trip-controls__actions">
+            <div className={styles.actions}>
               <button
                 type="button"
-                className="trip-controls__launch"
+                className={styles.launchButton}
                 onClick={handleLaunchTrip}
                 disabled={isProcessing || !city.trim()}
               >
                 {isProcessing ? 'Planning...' : 'Launch Trip'}
               </button>
-              <p className={`trip-controls__feedback${error ? ' trip-controls__error' : ''}`} role="status">
+              <p
+                className={`${styles.feedback}${error ? ` ${styles.feedbackError}` : ''}`}
+                role="status"
+              >
                 {error ?? feedback}
               </p>
             </div>
-
           </>
         )}
       </div>

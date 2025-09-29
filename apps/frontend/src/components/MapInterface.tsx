@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { ApiConfig } from '../utils/apiConfig'
 import { renderPendingTripIfAvailable } from '../utils/mapRenderer'
+import styles from './MapInterface.module.css'
 
 const DIAGONAL_VIEW_HEADING = 235
 const DIAGONAL_VIEW_TILT = 45
@@ -173,11 +174,11 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
   }
 
   return (
-    <div className="map-wrapper">
+    <div className={styles.mapWrapper}>
       <div id="map" ref={mapRef} aria-label="Travel map" />
 
       {!mapLoaded && (
-        <div className="map-loading" role="status">
+        <div className={styles.mapLoading} role="status">
           <p>Ready to plan your trip?</p>
           <p><small>Enter a city and days, then click <em>Launch Trip</em>.</small></p>
         </div>

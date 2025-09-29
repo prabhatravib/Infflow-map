@@ -2,11 +2,11 @@ import { MapInterface } from './components/MapInterface'
 import { ChatPanel } from './components/ChatPanel'
 import { TripControls } from './components/TripControls'
 import { VoiceWorkerFrame } from './components/VoiceWorkerFrame'
-import './App.css'
+import styles from './App.module.css'
 
 function App() {
   return (
-    <div className="app">
+    <div className={styles.app} id="app-root">
       <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
           <clipPath id="roundedHex" clipPathUnits="objectBoundingBox">

@@ -1,0 +1,43 @@
+.mapWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mapWrapper :global(.gm-style-cc),
+.mapWrapper :global(a[href^="https://maps.google.com/maps"]) {
+  display: none !important;
+}
+
+.mapLoading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(224, 224, 224, 0.85);
+  color: #333;
+  z-index: 1;
+  pointer-events: none;
+  padding: 1rem;
+}
+
+.mapLoading p {
+  margin: 0.5rem 0;
+}
+
+.mapLoading small {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.mapWrapper :global(.gm-style-iw button[title='Close']) {
+  display: none !important;
+}

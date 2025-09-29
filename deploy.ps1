@@ -6,6 +6,8 @@ param(
     [switch]$SkipSecrets
 )
 
+$ErrorActionPreference = "Stop"
+
 # Colors for output
 $Red = "Red"
 $Green = "Green"
@@ -33,13 +35,39 @@ function Write-Error {
     Write-Host "[ERROR] $Message" -ForegroundColor $Red
 }
 
+function Stop-Deployment {
+    param([string]$Message)
+    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    Write-Error $Message
+    Write-Error "Deployment failed at $timestamp. Aborting remaining steps."
+    try { [console]::Beep() } catch {}
+    exit 1
+}
+
+function Invoke-Step {
+    param(
+        [string]$FailureMessage,
+        [scriptblock]$Action
+    )
+
+    try {
+        $result = & $Action
+        if ($LASTEXITCODE -ne 0) {
+            Stop-Deployment $FailureMessage
+        }
+        return $result
+    } catch {
+        Stop-Deployment "$FailureMessage`n$($_.Exception.Message)"
+    }
+}
+
 # Check if wrangler is installed
 try {
     $null = Get-Command wrangler -ErrorAction Stop
 } catch {
     Write-Error "Wrangler CLI is not installed. Please install it first:"
     Write-Host "npm install -g wrangler"
-    exit 1
+    Stop-Deployment "Wrangler CLI is not installed."
 }
 
 # Check if user is logged in to Cloudflare
@@ -48,7 +76,7 @@ try {
 } catch {
     Write-Error "Not logged in to Cloudflare. Please run:"
     Write-Host "wrangler login"
-    exit 1
+    Stop-Deployment "Cloudflare authentication required."
 }
 
 Write-Status "Deploying Infflow Map services in order: Voice → Backend → Frontend"
@@ -58,18 +86,17 @@ Write-Status "Deploying Voice Service..."
 Set-Location "apps/voice"
 
 if (-not (Test-Path "package.json")) {
-    Write-Error "Voice service package.json not found"
-    exit 1
+    Stop-Deployment "Voice service package.json not found"
 }
 
 # Install dependencies if needed
 if (-not $SkipDependencies -and -not (Test-Path "node_modules")) {
     Write-Status "Installing voice service dependencies..."
-    npm install
+    Invoke-Step "Voice service dependency installation failed." { npm install }
 }
 
 # Deploy voice service
-$VoiceDeployOutput = wrangler deploy --env=""
+$VoiceDeployOutput = Invoke-Step "Voice service deployment failed." { wrangler deploy --env="" }
 $VoiceUrl = ($VoiceDeployOutput | Select-String "https://.*\.workers\.dev" | Select-Object -First 1).Matches[0].Value
 if ($VoiceUrl) {
     Write-Success "Voice service deployed at: $VoiceUrl"
@@ -83,24 +110,23 @@ Write-Status "Deploying Backend Service..."
 Set-Location "../backend"
 
 if (-not (Test-Path "package.json")) {
-    Write-Error "Backend service package.json not found"
-    exit 1
+    Stop-Deployment "Backend service package.json not found"
 }
 
 # Install dependencies if needed
 if (-not $SkipDependencies -and -not (Test-Path "node_modules")) {
     Write-Status "Installing backend service dependencies..."
-    npm install
+    Invoke-Step "Backend service dependency installation failed." { npm install }
 }
 
 # Set voice service URL
 if (-not $SkipSecrets) {
     Write-Status "Setting voice service URL..."
-    $VoiceUrl | wrangler secret put VOICE_SERVICE_URL --env=""
+    Invoke-Step "Setting voice service URL failed." { $VoiceUrl | wrangler secret put VOICE_SERVICE_URL --env="" }
 }
 
 # Deploy backend service
-$BackendDeployOutput = wrangler deploy --env=""
+$BackendDeployOutput = Invoke-Step "Backend service deployment failed." { wrangler deploy --env="" }
 $BackendUrl = ($BackendDeployOutput | Select-String "https://.*\.workers\.dev" | Select-Object -First 1).Matches[0].Value
 if ($BackendUrl) {
     Write-Success "Backend service deployed at: $BackendUrl"
@@ -114,22 +140,21 @@ Write-Status "Deploying Frontend Service..."
 Set-Location "../frontend"
 
 if (-not (Test-Path "package.json")) {
-    Write-Error "Frontend service package.json not found"
-    exit 1
+    Stop-Deployment "Frontend service package.json not found"
 }
 
 # Install dependencies if needed
 if (-not $SkipDependencies -and -not (Test-Path "node_modules")) {
     Write-Status "Installing frontend service dependencies..."
-    npm install
+    Invoke-Step "Frontend service dependency installation failed." { npm install }
 }
 
 # Build frontend
 Write-Status "Building frontend..."
-npm run build
+Invoke-Step "Frontend build failed." { npm run build }
 
 # Deploy frontend service
-$FrontendDeployOutput = wrangler deploy --env=""
+$FrontendDeployOutput = Invoke-Step "Frontend service deployment failed." { wrangler deploy --env="" }
 $FrontendUrl = ($FrontendDeployOutput | Select-String "https://.*\.workers\.dev" | Select-Object -First 1).Matches[0].Value
 if ($FrontendUrl) {
     Write-Success "Frontend service deployed at: $FrontendUrl"
@@ -140,7 +165,9 @@ if ($FrontendUrl) {
 
 # Summary
 Write-Host ""
-Write-Success "🎉 Deployment Complete!"
+$timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+Write-Success " Deployment Complete at $timestamp!"
+try { [console]::Beep() } catch {}
 Write-Host ""
 Write-Host "Service URLs:"
 Write-Host "  Frontend:  $FrontendUrl"

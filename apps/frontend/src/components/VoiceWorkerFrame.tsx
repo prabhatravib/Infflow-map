@@ -8,6 +8,7 @@ import {
   isVoiceWorkerEnabled,
   TripPlanStatus,
 } from '../utils/voiceWorker'
+import styles from './VoiceWorkerFrame.module.css'
 
 export function VoiceWorkerFrame() {
   const [enabled, setEnabled] = useState<boolean>(() => isVoiceWorkerEnabled())
@@ -48,39 +49,47 @@ export function VoiceWorkerFrame() {
   const iframeUrl = sessionId ? getVoiceWorkerIframeUrl(sessionId) : null
 
   return (
-    <div className="voice-worker-container" aria-hidden="false">
-      <div className="voice-worker-panel">
-        <div className="voice-worker-toggle">
-          <span className="voice-worker-label">Voice</span>
+    <div className={styles.voiceWorkerContainer} aria-hidden="false">
+      <div className={styles.voiceWorkerPanel}>
+        <div className={styles.voiceWorkerToggle}>
+          <span className={styles.voiceWorkerLabel}>Voice</span>
           <button
             type="button"
             onClick={toggleVoice}
-            className={`voice-worker-switch ${enabled ? 'on' : 'off'}`}
+            className={`${styles.voiceWorkerSwitch} ${enabled ? styles.switchOn : styles.switchOff}`}
             aria-pressed={enabled}
             aria-label="Toggle voice"
           >
-            <span className="voice-worker-switch-handle" />
+            <span
+              className={`${styles.voiceWorkerSwitchHandle} ${
+                enabled ? styles.switchOnHandle : styles.switchOffHandle
+              }`}
+            />
           </button>
-          <span className="voice-worker-value">{enabled ? 'ON' : 'OFF'}</span>
+          <span className={styles.voiceWorkerValue}>{enabled ? 'ON' : 'OFF'}</span>
         </div>
 
-        <div className="voice-worker-status">
-          <span className={`voice-worker-status-text ${status === 'sent' ? 'sent' : 'pending'}`}>
+        <div className={styles.voiceWorkerStatus}>
+          <span
+            className={`${styles.voiceWorkerStatus} ${
+              status === 'sent' ? styles.statusSent : styles.statusPending
+            }`}
+          >
             {status === 'sent' ? 'Trip Details Sent' : 'Trip Details Not Sent'}
           </span>
         </div>
 
-        <div className="voice-worker-hexagon" aria-live="polite">
+        <div className={styles.voiceWorkerHexagon} aria-live="polite">
           {enabled && iframeUrl ? (
             <iframe
               title="Infflow Voice Companion"
               src={iframeUrl}
-              className="voice-worker-iframe"
+              className={styles.voiceWorkerIframe}
               allow="microphone"
               loading="lazy"
             />
           ) : (
-            <div className="voice-worker-disabled">Voice Disabled</div>
+            <div className={styles.voiceWorkerDisabled}>Voice Disabled</div>
           )}
         </div>
       </div>
