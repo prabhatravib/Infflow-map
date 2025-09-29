@@ -193,6 +193,56 @@
   color: #555;
 }
 
+.info-window-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 220px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.info-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.info-window-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #111;
+}
+
+.info-window-close {
+  border: none;
+  background: rgba(15, 23, 42, 0.08);
+  color: #111;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.info-window-close:hover,
+.info-window-close:focus {
+  background: rgba(15, 23, 42, 0.16);
+  color: #000;
+  outline: none;
+}
+
+.map-wrapper .gm-style-iw button[title='Close'] {
+  display: none !important;
+}
+
 .trip-controls {
   position: fixed;
   bottom: 1rem;

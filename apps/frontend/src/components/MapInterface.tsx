@@ -2,6 +2,77 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ApiConfig } from '../utils/apiConfig'
 import { renderPendingTripIfAvailable } from '../utils/mapRenderer'
 
+const DIAGONAL_VIEW_HEADING = 235
+const DIAGONAL_VIEW_TILT = 45
+const TOGGLE_DATA_ATTR = 'data-diagonal-toggle'
+
+function attachDiagonalViewToggle(map: any, container?: HTMLElement | null) {
+  const viewButton = document.createElement('button')
+  viewButton.type = 'button'
+  viewButton.setAttribute(TOGGLE_DATA_ATTR, 'true')
+  viewButton.setAttribute('aria-label', 'Toggle diagonal map view')
+  viewButton.style.cssText = `
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.2s ease;
+  `
+
+  let isDiagonal = true
+
+  const setDiagonalView = () => {
+    map.setTilt(DIAGONAL_VIEW_TILT)
+    map.setHeading(DIAGONAL_VIEW_HEADING)
+    viewButton.innerHTML = '📏'
+    viewButton.title = 'Switch to top-down view'
+    viewButton.style.background = 'rgba(25, 118, 210, 0.9)'
+    viewButton.style.color = 'white'
+    viewButton.setAttribute('aria-pressed', 'true')
+    isDiagonal = true
+  }
+
+  const setTopDownView = () => {
+    map.setTilt(0)
+    map.setHeading(0)
+    viewButton.innerHTML = '📐'
+    viewButton.title = 'Switch to diagonal view'
+    viewButton.style.background = 'rgba(255, 255, 255, 0.9)'
+    viewButton.style.color = '#333'
+    viewButton.setAttribute('aria-pressed', 'false')
+    isDiagonal = false
+  }
+
+  viewButton.addEventListener('click', () => {
+    if (isDiagonal) {
+      setTopDownView()
+    } else {
+      setDiagonalView()
+    }
+  })
+
+  setDiagonalView()
+
+  const host = container ?? (map.getDiv()?.parentElement as HTMLElement | null) ?? map.getDiv()
+  if (host) {
+    const existingToggle = host.querySelector(`[${TOGGLE_DATA_ATTR}]`)
+    existingToggle?.remove()
+    host.appendChild(viewButton)
+  }
+}
+
 interface MapInterfaceProps {
   onMapReady: () => void
 }
@@ -87,10 +158,18 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
       scaleControl: false,
     })
 
+    attachDiagonalViewToggle(map, mapRef.current?.parentElement)
+
     ;(window as any).travelMap = map
-    setMapLoaded(true)
-    onMapReady()
-    renderPendingTripIfAvailable()
+
+    const maps = window.google.maps
+    maps.event.addListenerOnce(map, 'tilesloaded', () => {
+      map.setHeading(DIAGONAL_VIEW_HEADING)
+      map.setTilt(DIAGONAL_VIEW_TILT)
+      setMapLoaded(true)
+      onMapReady()
+      renderPendingTripIfAvailable()
+    })
   }
 
   return (

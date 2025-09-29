@@ -1,50 +1,16 @@
-import { TripData } from './tripTypes'
-
-const MAP_STATE = {
-  markers: [] as any[],
-  routes: [] as any[],
-  dayVisibility: new Map<number, boolean>(),
-}
-
-const CITY_CENTER_CACHE = new Map<string, { lat: number; lng: number }>()
-
-declare global {
-  interface Window {
-    travelMap?: any
-    google?: any
-    _directionsService?: any
-  }
-}
-
-let pendingTrip: TripData | null = null
-
-function getMap(): any {
-  return (window as any).travelMap
-}
-
-function getGoogleMaps(): any {
-  return (window as any).google?.maps
-}
-
-function getOrCreateDirectionsService(): any {
-  const maps = getGoogleMaps()
-  if (!maps) return undefined
-  const w = window as any
-  if (!w._directionsService) {
-    w._directionsService = new maps.DirectionsService()
-  }
-  return w._directionsService
-}
-
-function getOrCreateGeocoder(): any {
-  const maps = getGoogleMaps()
-  if (!maps) return undefined
-  const w = window as any
-  if (!w._geocoder) {
-    w._geocoder = new maps.Geocoder()
-  }
-  return w._geocoder
-}
+import { TripData } from '../tripTypes'
+import {
+  MAP_STATE,
+  getMap,
+  getGoogleMaps,
+  getOrCreateDirectionsService,
+  resetMapState,
+} from './state'
+import { ensureInitialDayCamera, enableDiagonalToggle, toggleDayCamera } from './camera'
+import { clearDayControls, toggleDayVisibility } from './dayControls'
+import { estimateDrivingTime, getColourForDay, toLatLngLiteral, LatLngLiteral } from './utils'
+import { getPendingTrip, setPendingTrip } from './tripState'
+import { centerMapOnCity, centerMapOnCoordinates } from './mapCentering'
 
 export function clearTripRender() {
   MAP_STATE.markers.forEach((marker) => {
@@ -61,14 +27,9 @@ export function clearTripRender() {
     }
   })
 
-  MAP_STATE.markers = []
-  MAP_STATE.routes = []
-  MAP_STATE.dayVisibility.clear()
-
-  const dayControls = document.getElementById('day-controls')
-  if (dayControls) {
-    dayControls.innerHTML = ''
-  }
+  resetMapState()
+  enableDiagonalToggle()
+  clearDayControls()
 }
 
 export function renderTripOnMap(trip: TripData) {
@@ -80,11 +41,11 @@ export function renderTripOnMap(trip: TripData) {
   const map = getMap()
   const gmaps = getGoogleMaps()
   if (!map || !gmaps) {
-    pendingTrip = trip
+    setPendingTrip(trip)
     return
   }
 
-  pendingTrip = null
+  setPendingTrip(null)
 
   clearTripRender()
 
@@ -94,6 +55,8 @@ export function renderTripOnMap(trip: TripData) {
     if (!day || !Array.isArray(day.stops)) {
       return
     }
+
+    const dayStopCoords: LatLngLiteral[] = []
 
     day.stops.forEach((stop, stopIndex) => {
       if (!isFinite(stop.lat) || !isFinite(stop.lng)) return
@@ -115,15 +78,24 @@ export function renderTripOnMap(trip: TripData) {
         zIndex: -1000 - stopIndex,
       })
 
+      const infoWindowContent = document.createElement('div')
+      infoWindowContent.className = 'info-window-content'
+      infoWindowContent.innerHTML = `
+        <div class="info-window-header">
+          <h4>${stop.name}</h4>
+          <button type="button" class="info-window-close" aria-label="Close info window">×</button>
+        </div>
+        <p>${day.label || `Day ${dayIndex + 1}`} • Stop ${stopIndex + 1}</p>
+        ${stop.description ? `<p>${stop.description}</p>` : ''}
+      `
+
       const infoWindow = new gmaps.InfoWindow({
-        content: `
-          <div class="info-window-content">
-            <h4>${stop.name}</h4>
-            <p>${day.label || `Day ${dayIndex + 1}`} • Stop ${stopIndex + 1}</p>
-            ${stop.description ? `<p>${stop.description}</p>` : ''}
-            ${stop.address ? `<p><small>${stop.address}</small></p>` : ''}
-          </div>
-        `,
+        content: infoWindowContent,
+      })
+
+      const closeButton = infoWindowContent.querySelector<HTMLButtonElement>('.info-window-close')
+      closeButton?.addEventListener('click', () => {
+        infoWindow.close()
       })
 
       marker.addListener('click', () => {
@@ -138,10 +110,16 @@ export function renderTripOnMap(trip: TripData) {
 
       MAP_STATE.markers.push(marker)
       const position = marker.position || marker.getPosition?.()
-      if (position) {
-        bounds.extend(position)
+      const literal = toLatLngLiteral(position)
+      if (literal) {
+        bounds.extend(literal)
+        dayStopCoords.push(literal)
       }
     })
+
+    if (dayStopCoords.length > 0) {
+      MAP_STATE.dayStops.set(dayIndex, dayStopCoords)
+    }
   })
 
   drawRoutes(trip)
@@ -195,7 +173,11 @@ function drawRoutes(trip: TripData) {
   })
 }
 
-function createRouteSegments(stops: TripData['days'][number]['stops'], dayIndex: number, travelTimes?: (string | undefined)[]) {
+function createRouteSegments(
+  stops: TripData['days'][number]['stops'],
+  dayIndex: number,
+  travelTimes?: (string | undefined)[]
+) {
   if (!Array.isArray(stops) || stops.length < 2) {
     return
   }
@@ -250,7 +232,12 @@ function createBezierCurve(start: { lat: number; lng: number }, end: { lat: numb
   return points
 }
 
-function createTimeLabel(start: { lat: number; lng: number }, end: { lat: number; lng: number }, text: string, visible: boolean) {
+function createTimeLabel(
+  start: { lat: number; lng: number },
+  end: { lat: number; lng: number },
+  text: string,
+  visible: boolean
+) {
   const gmaps = getGoogleMaps()
   if (!gmaps) throw new Error('Google maps not available')
 
@@ -284,25 +271,6 @@ function createTimeLabel(start: { lat: number; lng: number }, end: { lat: number
   })
 }
 
-function estimateDrivingTime(start: { lat: number; lng: number }, end: { lat: number; lng: number }) {
-  const R = 6371
-  const toRad = (value: number) => (value * Math.PI) / 180
-  const dLat = toRad(end.lat - start.lat)
-  const dLon = toRad(end.lng - start.lng)
-  const lat1 = toRad(start.lat)
-  const lat2 = toRad(end.lat)
-
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  const distanceKm = R * c
-
-  const minutes = Math.round((distanceKm / 40) * 60)
-  if (minutes < 60) return `${minutes} min`
-  const hours = Math.floor(minutes / 60)
-  const remainder = minutes % 60
-  return remainder > 0 ? `${hours} hr ${remainder} min` : `${hours} hr`
-}
-
 function setupDayControls(trip: TripData) {
   const containerId = 'day-controls'
   let container = document.getElementById(containerId)
@@ -330,7 +298,7 @@ function setupDayControls(trip: TripData) {
 
     checkbox.addEventListener('change', () => {
       MAP_STATE.dayVisibility.set(index, checkbox.checked)
-      toggleDayVisibility(index, checkbox.checked)
+      toggleDayCamera(index, checkbox.checked)
     })
 
     wrapper.appendChild(label)
@@ -343,81 +311,19 @@ function setupDayControls(trip: TripData) {
     const isVisible = MAP_STATE.dayVisibility.get(index) ?? false
     toggleDayVisibility(index, isVisible)
   })
-}
 
-function toggleDayVisibility(dayIndex: number, visible: boolean) {
-  MAP_STATE.markers.forEach((marker: any) => {
-    if (marker.dayIndex === dayIndex) {
-      marker.map = visible ? getMap() : null
-      if (!visible) {
-        marker.infoWindow?.close?.()
-      }
-    }
-  })
-
-  MAP_STATE.routes.forEach((route: any) => {
-    if (route.dayIndex === dayIndex) {
-      if (route.setMap) {
-        route.setMap(visible ? getMap() : null)
-      } else {
-        route.map = visible ? getMap() : null
-      }
-    }
-  })
-}
-
-function getColourForDay(dayIndex: number) {
-  const baseColours = ['#2196f3', '#f44336', '#4caf50', '#ff9800', '#9c27b0', '#009688', '#3f51b5']
-  return baseColours[dayIndex % baseColours.length]
+  ensureInitialDayCamera()
 }
 
 export function renderPendingTripIfAvailable() {
+  const pendingTrip = getPendingTrip()
   if (pendingTrip) {
-    const trip = pendingTrip
-    pendingTrip = null
-    renderTripOnMap(trip).catch((error) => console.error('Failed to render pending trip', error))
-  }
-}
-
-function centerMapOnCity(city: string) {
-  const map = getMap()
-  const gmaps = getGoogleMaps()
-  if (!map || !gmaps || !city) return
-
-  const normalizedCity = city.trim()
-  if (!normalizedCity) return
-
-  const cacheKey = normalizedCity.toLowerCase()
-  const cached = CITY_CENTER_CACHE.get(cacheKey)
-  if (cached) {
-    map.setCenter(cached)
-    map.setZoom(12)
-    return
-  }
-
-  const geocoder = getOrCreateGeocoder()
-  if (!geocoder) return
-
-  geocoder.geocode({ address: normalizedCity }, (results: any, status: string) => {
-    if (status === 'OK' && Array.isArray(results) && results[0]?.geometry?.location) {
-      const location = results[0].geometry.location
-      const target = { lat: location.lat(), lng: location.lng() }
-      CITY_CENTER_CACHE.set(cacheKey, target)
-      map.setCenter(target)
-      map.setZoom(12)
+    setPendingTrip(null)
+    try {
+      renderTripOnMap(pendingTrip)
+    } catch (error: unknown) {
+      console.error('Failed to render pending trip', error)
     }
-  })
-}
-
-function centerMapOnCoordinates(center: { lat: number; lng: number }) {
-  const map = getMap()
-  if (!map) return
-
-  if (!Number.isFinite(center.lat) || !Number.isFinite(center.lng)) return
-
-  map.setCenter(center)
-  map.setZoom(12)
-  const cacheKey = `${center.lat.toFixed(3)},${center.lng.toFixed(3)}`
-  CITY_CENTER_CACHE.set(cacheKey, center)
+  }
 }
 
