@@ -9,18 +9,21 @@
 
 
 .info-window-content {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  min-width: 220px;
+  min-width: 240px;
+  padding: 0.75rem 0.75rem 0.85rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .info-window-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.75rem;
+  padding-right: 2.5rem;
 }
 
 .info-window-header h4 {
@@ -32,6 +35,9 @@
 }
 
 .info-window-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
   border: none;
   background: rgba(15, 23, 42, 0.08);
   color: #111;
