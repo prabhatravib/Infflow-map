@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { ApiConfig } from '../utils/apiConfig'
+import { renderPendingTripIfAvailable } from '../utils/mapRenderer'
 
 interface MapInterfaceProps {
   onMapReady: () => void
@@ -7,7 +8,7 @@ interface MapInterfaceProps {
 
 declare global {
   interface Window {
-    google: any
+    google?: any
     initMap?: () => void
   }
 }
@@ -54,7 +55,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
     }
 
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=geometry&v=beta&map_ids=${styleMapId}&callback=initMap`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=geometry,marker&v=beta&map_ids=${styleMapId}&callback=initMap&loading=async`
     script.async = true
     script.defer = true
 
@@ -89,6 +90,7 @@ export const MapInterface: React.FC<MapInterfaceProps> = ({ onMapReady }) => {
     ;(window as any).travelMap = map
     setMapLoaded(true)
     onMapReady()
+    renderPendingTripIfAvailable()
   }
 
   return (

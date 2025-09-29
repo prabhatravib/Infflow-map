@@ -1,20 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { KeyboardEvent, useState } from 'react'
 import { ApiConfig } from '../utils/apiConfig'
-
-interface ItineraryResponse {
-  city: string
-  days: number
-  itinerary: unknown[]
-  locations: Array<{
-    lat: number
-    lng: number
-    name: string
-    day: number
-    description?: string
-    address?: string
-  }>
-  tips: string[]
-}
+import { renderTripOnMap } from '../utils/mapRenderer'
+import { TripData, TripDay, TripStop } from '../utils/tripTypes'
 
 const DEFAULT_CITY = 'Paris'
 const DEFAULT_DAYS = 3
@@ -24,28 +11,10 @@ const MAX_DAYS = 14
 export function TripControls() {
   const [city, setCity] = useState(DEFAULT_CITY)
   const [days, setDays] = useState(DEFAULT_DAYS)
-  const [itineraryDays, setItineraryDays] = useState(0)
-  const [selectedDays, setSelectedDays] = useState<number[]>([])
   const [hasItinerary, setHasItinerary] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
-
-  const dayButtons = useMemo(() => createDayRange(itineraryDays), [itineraryDays])
-
-  useEffect(() => {
-    if (!hasItinerary) return
-    updateMapVisibility(selectedDays)
-  }, [selectedDays, hasItinerary])
-
-  const handleDayToggle = (day: number) => {
-    setSelectedDays((prev) => {
-      if (prev.includes(day)) {
-        return prev.filter((value) => value !== day)
-      }
-      return [...prev, day].sort((a, b) => a - b)
-    })
-  }
 
   const handleLaunchTrip = async () => {
     const normalizedCity = city.trim()
@@ -61,7 +30,7 @@ export function TripControls() {
     setFeedback(null)
 
     try {
-      const data = await ApiConfig.fetchJson<ItineraryResponse>('/api/itinerary', {
+      const data = await ApiConfig.fetchJson<ApiItineraryResponse>('/api/itinerary', {
         method: 'POST',
         body: JSON.stringify({
           city: normalizedCity,
@@ -69,20 +38,19 @@ export function TripControls() {
         }),
       })
 
-      sessionStorage.setItem('currentItinerary', JSON.stringify(data))
+      const trip = transformResponseToTripData(data)
+
+      sessionStorage.setItem('currentItinerary', JSON.stringify(trip))
       sessionStorage.setItem('currentCity', normalizedCity)
-      sessionStorage.setItem('currentDays', String(data.days ?? normalizedDays))
+      sessionStorage.setItem('currentDays', String(trip.metadata?.days ?? normalizedDays))
 
       setCity(normalizedCity)
-      setDays(data.days ?? normalizedDays)
-      const totalDays = data.days ?? normalizedDays
-      setItineraryDays(totalDays)
-      const allDays = createDayRange(totalDays)
-      setSelectedDays(allDays)
-      setHasItinerary(true)
+      const resolvedDays = trip.metadata?.days ?? normalizedDays
+      setDays(resolvedDays)
+      setHasItinerary(trip.days.some((day) => day.stops.length > 0))
 
-      if ((window as any).travelMap && Array.isArray(data.locations)) {
-        updateMapWithItinerary(data.locations)
+      if ((window as any).travelMap) {
+        renderTripOnMap(trip)
       }
 
       setFeedback(`Itinerary ready for ${normalizedCity}`)
@@ -92,6 +60,13 @@ export function TripControls() {
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  const handleCityKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return
+    event.preventDefault()
+    if (isProcessing || !city.trim()) return
+    void handleLaunchTrip()
   }
 
   const handleDaysChange = (value: string) => {
@@ -119,6 +94,7 @@ export function TripControls() {
             placeholder="City"
             value={city}
             onChange={(event) => setCity(event.target.value)}
+            onKeyDown={handleCityKeyDown}
             disabled={isProcessing}
             aria-label="City"
           />
@@ -148,19 +124,9 @@ export function TripControls() {
           </p>
         </div>
 
-        {hasItinerary && dayButtons.length > 0 && (
-          <div className="trip-controls__day-toggle" role="group" aria-label="Toggle itinerary days">
-            {dayButtons.map((day) => (
-              <button
-                key={day}
-                type="button"
-                className={`trip-controls__day-button${selectedDays.includes(day) ? ' trip-controls__day-button--active' : ''}`}
-                onClick={() => handleDayToggle(day)}
-                aria-pressed={selectedDays.includes(day)}
-              >
-                Day {day}
-              </button>
-            ))}
+        {hasItinerary && (
+          <div className="trip-controls__disclaimer" role="note">
+            <span>Itinerary plotted on map</span>
           </div>
         )}
       </div>
@@ -168,79 +134,142 @@ export function TripControls() {
   )
 }
 
-function createDayRange(totalDays: number): number[] {
-  return Array.from({ length: Math.max(totalDays, 0) }, (_, index) => index + 1)
-}
-
 function clampDays(value: number): number {
   if (!Number.isFinite(value)) return MIN_DAYS
   return Math.min(Math.max(Math.round(value), MIN_DAYS), MAX_DAYS)
 }
 
-function updateMapWithItinerary(locations: ItineraryResponse['locations']) {
-  const map = (window as any).travelMap
-  const googleMaps = (window as any).google?.maps
-  if (!map || !Array.isArray(locations) || !googleMaps) return
-
-  if (Array.isArray((window as any).markers)) {
-    ;(window as any).markers.forEach((marker: any) => {
-      if (marker?.setMap) {
-        marker.setMap(null)
-      }
-    })
-  }
-
-  const markers: any[] = []
-  const bounds = new googleMaps.LatLngBounds()
-
-  locations.forEach((location, index) => {
-    const marker = new googleMaps.Marker({
-      position: { lat: location.lat, lng: location.lng },
-      map,
-      title: location.name,
-      label: String(index + 1),
-    })
-
-    const infoWindow = new googleMaps.InfoWindow({
-      content: `
-        <div class="info-window">
-          <h4>${location.name}</h4>
-          <p><strong>Day ${location.day}</strong></p>
-          <p>${location.description ?? ''}</p>
-          ${location.address ? `<p><small>${location.address}</small></p>` : ''}
-        </div>
-      `,
-    })
-
-    marker.addListener('click', () => {
-      infoWindow.open(map, marker)
-    })
-
-    markers.push(marker)
-    const position = marker.getPosition?.()
-    if (position) {
-      bounds.extend(position)
+interface ApiItineraryResponse {
+  city?: string
+  days?: number | ApiDay[]
+  itinerary?: unknown
+  locations?: ApiLocation[]
+  tips?: string[]
+  metadata?: {
+    city?: string
+    days?: number
+    center?: {
+      lat?: number
+      lng?: number
     }
-  })
-
-  ;(window as any).markers = markers
-
-  if (markers.length > 0) {
-    map.fitBounds(bounds)
   }
 }
 
-function updateMapVisibility(visibleDays: number[]) {
-  const markers = (window as any).markers as any[] | undefined
-  if (!Array.isArray(markers)) {
-    return
+interface ApiDay {
+  day?: number
+  label?: string
+  stops?: ApiLocation[]
+}
+
+interface ApiLocation {
+  name: string
+  lat?: number
+  lng?: number
+  day?: number
+  description?: string
+  address?: string
+  placeType?: string
+}
+
+function transformResponseToTripData(data: ApiItineraryResponse): TripData {
+  const daysFromApi = Array.isArray(data.days) ? data.days : null
+  const locations = Array.isArray(data.locations) ? data.locations : []
+  let centerPoint: { lat: number; lng: number } | undefined
+
+  const buildStop = (location: ApiLocation | undefined): TripStop | null => {
+    if (!location) return null
+
+    const lat = typeof location.lat === 'number' ? location.lat : Number(location.lat)
+    const lng = typeof location.lng === 'number' ? location.lng : Number(location.lng)
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return null
+    }
+
+    return {
+      name: location.name,
+      lat,
+      lng,
+      description: location.description,
+      address: location.address,
+      placeType: location.placeType,
+    }
   }
 
-  markers.forEach((marker, index) => {
-    const dayNumber = index + 1
-    if (marker?.setVisible) {
-      marker.setVisible(visibleDays.includes(dayNumber))
+  const tripDays: TripDay[] = []
+
+  if (daysFromApi) {
+    daysFromApi.forEach((dayEntry, index) => {
+      const stops = (dayEntry.stops ?? [])
+        .map(buildStop)
+        .filter((stop): stop is TripStop => Boolean(stop))
+
+      if (!centerPoint && stops[0]) {
+        centerPoint = { lat: stops[0].lat, lng: stops[0].lng }
+      }
+
+      tripDays.push({
+        label: dayEntry.label || `Day ${dayEntry.day ?? index + 1}`,
+        stops,
+      })
+    })
+  }
+
+  if (tripDays.length === 0 && locations.length > 0) {
+    const dayBuckets = new Map<number, TripStop[]>()
+    let maxDay = 0
+
+    locations.forEach((location) => {
+      const stop = buildStop(location)
+      if (!stop) return
+
+      const zeroBasedDay = Math.max((location.day ?? 1) - 1, 0)
+      maxDay = Math.max(maxDay, zeroBasedDay)
+
+      if (!dayBuckets.has(zeroBasedDay)) {
+        dayBuckets.set(zeroBasedDay, [])
+      }
+
+      dayBuckets.get(zeroBasedDay)!.push(stop)
+
+      if (!centerPoint) {
+        centerPoint = { lat: stop.lat, lng: stop.lng }
+      }
+    })
+
+    for (let index = 0; index <= maxDay; index += 1) {
+      tripDays.push({
+        label: `Day ${index + 1}`,
+        stops: dayBuckets.get(index) ?? [],
+      })
     }
-  })
+  }
+
+  const resolvedDaysCount = tripDays.length > 0 ? tripDays.length : Math.max((typeof data.days === 'number' ? data.days : data.metadata?.days) ?? 0, 1)
+
+  if (tripDays.length === 0) {
+    for (let index = 0; index < resolvedDaysCount; index += 1) {
+      tripDays.push({ label: `Day ${index + 1}`, stops: [] })
+    }
+  }
+
+  if (!centerPoint) {
+    const metaCenter = data.metadata?.center
+    const lat = typeof metaCenter?.lat === 'number' ? metaCenter.lat : Number(metaCenter?.lat)
+    const lng = typeof metaCenter?.lng === 'number' ? metaCenter.lng : Number(metaCenter?.lng)
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      centerPoint = { lat, lng }
+    }
+  }
+
+  return {
+    days: tripDays,
+    metadata: {
+      city: data.metadata?.city ?? data.city,
+      days: resolvedDaysCount,
+      center: centerPoint,
+    },
+    tips: Array.isArray(data.tips) ? data.tips : undefined,
+  }
 }
 

@@ -1,8 +1,6 @@
 import { MapInterface } from './components/MapInterface'
 import { ChatPanel } from './components/ChatPanel'
 import { TripControls } from './components/TripControls'
-import { VoiceInitializer } from './components/VoiceInitializer'
-import { VoiceWorkerFrame } from './components/VoiceWorkerFrame'
 import './App.css'
 
 function App() {
@@ -25,8 +23,6 @@ function App() {
       <MapInterface onMapReady={() => {}} />
       <ChatPanel />
       <TripControls />
-      <VoiceInitializer />
-      <VoiceWorkerFrame />
     </div>
   )
 }

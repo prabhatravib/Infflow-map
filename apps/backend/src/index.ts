@@ -1,4 +1,5 @@
 import { OpenAI } from 'openai'
+import { generateItinerary as buildItinerary } from './services/itinerary'
 
 export interface Env {
   OPENAI_API_KEY: string
@@ -90,7 +91,12 @@ async function handleItinerary(request: Request, env: Env, corsHeaders: Record<s
     }
 
     // Generate itinerary using OpenAI
-    const itinerary = await generateItinerary(city, days, env.OPENAI_API_KEY)
+    const itinerary = await buildItinerary({
+      city,
+      days,
+      openAIApiKey: env.OPENAI_API_KEY,
+      googleMapsApiKey: env.GOOGLE_MAPS_API_KEY,
+    })
     
     return new Response(JSON.stringify(itinerary), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -172,122 +178,6 @@ async function handleVoiceProxy(request: Request, env: Env, corsHeaders: Record<
       status: 503,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
-  }
-}
-
-async function generateItinerary(city: string, days: number, apiKey: string): Promise<any> {
-  const openai = new OpenAI({ apiKey })
-
-  const prompt = `Create a detailed ${days}-day travel itinerary for ${city}. 
-  
-  Please provide:
-  1. A day-by-day breakdown with specific attractions, restaurants, and activities
-  2. Approximate locations with addresses where possible
-  3. Time estimates for each activity
-  4. Transportation suggestions between locations
-  5. Budget-friendly and premium options where applicable
-  
-  Format the response as a JSON object with the following structure:
-  {
-    "city": "${city}",
-    "days": ${days},
-    "itinerary": [
-      {
-        "day": 1,
-        "title": "Day 1 Title",
-        "activities": [
-          {
-            "name": "Activity Name",
-            "description": "Detailed description",
-            "time": "9:00 AM - 11:00 AM",
-            "location": "Address or area",
-            "type": "attraction|restaurant|activity|transport",
-            "cost": "Free|$|$$|$$$",
-            "notes": "Additional tips or information"
-          }
-        ]
-      }
-    ],
-    "locations": [
-      {
-        "name": "Location Name",
-        "address": "Full address",
-        "lat": 48.8566,
-        "lng": 2.3522,
-        "day": 1,
-        "description": "Brief description"
-      }
-    ],
-    "tips": [
-      "General travel tips for this city",
-      "Cultural considerations",
-      "Best times to visit attractions"
-    ]
-  }`
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a professional travel planner with extensive knowledge of cities worldwide. Provide detailed, practical, and accurate travel itineraries.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 4000,
-    })
-
-    const responseText = completion.choices[0]?.message?.content
-    if (!responseText) {
-      throw new Error('No response from OpenAI')
-    }
-
-    // Try to parse JSON response
-    try {
-      return JSON.parse(responseText)
-    } catch (parseError) {
-      // If JSON parsing fails, return a structured response
-      return {
-        city,
-        days,
-        itinerary: [
-          {
-            day: 1,
-            title: `Day 1 in ${city}`,
-            activities: [
-              {
-                name: 'Explore the city',
-                description: responseText,
-                time: 'All day',
-                location: city,
-                type: 'activity',
-                cost: '$$',
-                notes: 'AI-generated itinerary'
-              }
-            ]
-          }
-        ],
-        locations: [
-          {
-            name: city,
-            address: city,
-            lat: 0,
-            lng: 0,
-            day: 1,
-            description: 'Main city area'
-          }
-        ],
-        tips: ['Enjoy your trip!']
-      }
-    }
-  } catch (error) {
-    console.error('OpenAI API error:', error)
-    throw new Error('Failed to generate itinerary with AI')
   }
 }
 
