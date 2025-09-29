@@ -11,10 +11,10 @@ const MAX_DAYS = 14
 export function TripControls() {
   const [city, setCity] = useState(DEFAULT_CITY)
   const [days, setDays] = useState(DEFAULT_DAYS)
-  const [hasItinerary, setHasItinerary] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   const handleLaunchTrip = async () => {
     const normalizedCity = city.trim()
@@ -47,8 +47,6 @@ export function TripControls() {
       setCity(normalizedCity)
       const resolvedDays = trip.metadata?.days ?? normalizedDays
       setDays(resolvedDays)
-      setHasItinerary(trip.days.some((day) => day.stops.length > 0))
-
       if ((window as any).travelMap) {
         renderTripOnMap(trip)
       }
@@ -80,54 +78,72 @@ export function TripControls() {
     setDays(clamped)
   }
 
+  const toggleCollapsed = () => {
+    setIsCollapsed((previous) => !previous)
+  }
+
+  const toggleLabel = isCollapsed ? 'Maximize trip planner' : 'Minimize trip planner'
+
   return (
-    <section className="trip-controls" aria-label="Trip planner controls">
+    <section
+      className={`trip-controls${isCollapsed ? ' trip-controls--collapsed' : ''}`}
+      aria-label="Trip planner controls"
+    >
       <div className="trip-controls__body">
         <header className="trip-controls__header">
           <h2 className="trip-controls__title">Trip Planner</h2>
-        </header>
-
-        <div className="trip-controls__inputs">
-          <input
-            className="trip-controls__input trip-controls__input--city"
-            type="text"
-            placeholder="City"
-            value={city}
-            onChange={(event) => setCity(event.target.value)}
-            onKeyDown={handleCityKeyDown}
-            disabled={isProcessing}
-            aria-label="City"
-          />
-          <input
-            className="trip-controls__input trip-controls__input--days"
-            type="number"
-            min={MIN_DAYS}
-            max={MAX_DAYS}
-            value={days}
-            onChange={(event) => handleDaysChange(event.target.value)}
-            disabled={isProcessing}
-            aria-label="Number of days"
-          />
-        </div>
-
-        <div className="trip-controls__actions">
           <button
             type="button"
-            className="trip-controls__launch"
-            onClick={handleLaunchTrip}
-            disabled={isProcessing || !city.trim()}
+            className="trip-controls__toggle"
+            onClick={toggleCollapsed}
+            aria-label={toggleLabel}
+            aria-expanded={!isCollapsed}
+            title={toggleLabel}
           >
-            {isProcessing ? 'Planning...' : 'Launch Trip'}
+            <span aria-hidden="true">{isCollapsed ? '+' : '-'}</span>
           </button>
-          <p className={`trip-controls__feedback${error ? ' trip-controls__error' : ''}`} role="status">
-            {error ?? feedback}
-          </p>
-        </div>
+        </header>
 
-        {hasItinerary && (
-          <div className="trip-controls__disclaimer" role="note">
-            <span>Itinerary plotted on map</span>
-          </div>
+        {!isCollapsed && (
+          <>
+            <div className="trip-controls__inputs">
+              <input
+                className="trip-controls__input trip-controls__input--city"
+                type="text"
+                placeholder="City"
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                onKeyDown={handleCityKeyDown}
+                disabled={isProcessing}
+                aria-label="City"
+              />
+              <input
+                className="trip-controls__input trip-controls__input--days"
+                type="number"
+                min={MIN_DAYS}
+                max={MAX_DAYS}
+                value={days}
+                onChange={(event) => handleDaysChange(event.target.value)}
+                disabled={isProcessing}
+                aria-label="Number of days"
+              />
+            </div>
+
+            <div className="trip-controls__actions">
+              <button
+                type="button"
+                className="trip-controls__launch"
+                onClick={handleLaunchTrip}
+                disabled={isProcessing || !city.trim()}
+              >
+                {isProcessing ? 'Planning...' : 'Launch Trip'}
+              </button>
+              <p className={`trip-controls__feedback${error ? ' trip-controls__error' : ''}`} role="status">
+                {error ?? feedback}
+              </p>
+            </div>
+
+          </>
         )}
       </div>
     </section>

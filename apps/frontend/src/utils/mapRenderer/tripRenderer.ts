@@ -278,8 +278,8 @@ function setupDayControls(trip: TripData) {
     container = document.createElement('div')
     container.id = containerId
     container.className = 'day-controls'
-    const mapWrapper = document.querySelector('.map-wrapper')
-    mapWrapper?.appendChild(container)
+    const appRoot = document.querySelector('.app')
+    appRoot?.appendChild(container)
   }
 
   trip.days.forEach((day, index) => {

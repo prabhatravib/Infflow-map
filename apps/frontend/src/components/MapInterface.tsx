@@ -13,8 +13,8 @@ function attachDiagonalViewToggle(map: any, container?: HTMLElement | null) {
   viewButton.setAttribute('aria-label', 'Toggle diagonal map view')
   viewButton.style.cssText = `
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    bottom: 1.5rem;
+    right: 1.5rem;
     width: 44px;
     height: 44px;
     background: rgba(255, 255, 255, 0.9);
