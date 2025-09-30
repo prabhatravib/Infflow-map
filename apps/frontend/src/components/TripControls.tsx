@@ -2,6 +2,7 @@ import { KeyboardEvent, useState } from 'react'
 import { ApiConfig } from '../utils/apiConfig'
 import { renderTripOnMap } from '../utils/mapRenderer'
 import { TripData, TripDay, TripStop } from '../utils/tripTypes'
+import { markTripPlanPending, sendTripPlanToVoiceWorker } from '../utils/voiceWorker'
 import styles from './TripControls.module.css'
 
 const DEFAULT_CITY = 'Paris'
@@ -31,6 +32,8 @@ export function TripControls() {
     setFeedback(null)
 
     try {
+      markTripPlanPending()
+
       const data = await ApiConfig.fetchJson<ApiItineraryResponse>('/api/itinerary', {
         method: 'POST',
         body: JSON.stringify({
@@ -51,6 +54,8 @@ export function TripControls() {
       if ((window as any).travelMap) {
         renderTripOnMap(trip)
       }
+
+      await sendTripPlanToVoiceWorker(trip)
 
       setFeedback(`Itinerary ready for ${normalizedCity}`)
     } catch (fetchError) {

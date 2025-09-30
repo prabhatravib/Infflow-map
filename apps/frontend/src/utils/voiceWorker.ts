@@ -2,6 +2,7 @@ const VOICE_WORKER_ORIGIN = 'https://hexa-worker.prabhatravib.workers.dev'
 const SESSION_STORAGE_KEY = 'voiceWorkerSessionId'
 const PLAN_HASH_KEY = 'voiceWorkerLastTripPlanHash'
 const STATUS_STORAGE_KEY = 'voiceWorkerTripPlanStatus'
+const LAST_TRIP_STORAGE_KEY = 'currentItinerary'
 
 export type TripPlanStatus = 'sent' | 'not-sent'
 
@@ -48,6 +49,40 @@ function setGlobalSessionId(sessionId: string | null) {
   }
 }
 
+function tryGetStoredTripPlan(): unknown | null {
+  const storage = getSessionStorage()
+  const raw = storage?.getItem(LAST_TRIP_STORAGE_KEY)
+  if (!raw) return null
+
+  try {
+    return JSON.parse(raw)
+  } catch (error) {
+    console.warn('[VoiceWorker] Failed to parse stored trip plan:', error)
+    return null
+  }
+}
+
+function ensureSessionId(): string {
+  if (currentSessionId) {
+    return currentSessionId
+  }
+
+  const storage = getSessionStorage()
+  const stored = storage?.getItem(SESSION_STORAGE_KEY)
+
+  if (stored) {
+    currentSessionId = stored
+    setGlobalSessionId(stored)
+    return stored
+  }
+
+  const newSessionId = generateSessionId()
+  currentSessionId = newSessionId
+  setGlobalSessionId(newSessionId)
+  storage?.setItem(SESSION_STORAGE_KEY, newSessionId)
+  return newSessionId
+}
+
 function dispatchVoiceWorkerEvent<T>(name: string, detail: T) {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new CustomEvent(name, { detail }))
@@ -75,7 +110,7 @@ export function isVoiceWorkerEnabled(): boolean {
   return voiceEnabled
 }
 
-export function enableVoiceWorker(): string {
+export async function enableVoiceWorker(): Promise<string> {
   const storage = getSessionStorage()
   const newSessionId = generateSessionId()
 
@@ -90,6 +125,11 @@ export function enableVoiceWorker(): string {
     enabled: true,
     sessionId: newSessionId,
   })
+
+  const storedPlan = tryGetStoredTripPlan()
+  if (storedPlan) {
+    await sendTripPlanToVoiceWorker(storedPlan)
+  }
 
   return newSessionId
 }
@@ -110,7 +150,6 @@ export function disableVoiceWorker(): void {
 }
 
 export function markTripPlanPending(): void {
-  if (!voiceEnabled) return
   setTripPlanStatus('not-sent')
 }
 
@@ -141,24 +180,22 @@ export async function sendTripPlanToVoiceWorker(
   plan: unknown,
   options: TripPlanPayload = {}
 ) {
-  if (!voiceEnabled || !currentSessionId) {
-    return
-  }
-
   const serializedPlan = options.textOverride || normalizePlanToText(plan)
   const planHash = getPlanFingerprint(serializedPlan)
   const storage = getSessionStorage()
   const lastHash = storage?.getItem(PLAN_HASH_KEY)
 
   if (lastHash === planHash) {
+    setTripPlanStatus('sent')
     return
   }
 
+  const sessionId = ensureSessionId()
   const payload = {
-    sessionId: currentSessionId,
+    sessionId,
     type: options.type || 'trip_plan',
     text: serializedPlan,
-    prompt: options.prompt || `Trip plan context for session ${currentSessionId}`,
+    prompt: options.prompt || `Trip plan context for session ${sessionId}`,
     ...(options.image ? { image: options.image } : {}),
   }
 

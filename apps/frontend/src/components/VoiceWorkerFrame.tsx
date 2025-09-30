@@ -42,8 +42,9 @@ export function VoiceWorkerFrame() {
       return
     }
 
-    const newSessionId = enableVoiceWorker()
-    setSessionId(newSessionId)
+    void enableVoiceWorker().then(setSessionId).catch((error) => {
+      console.error('[VoiceWorkerFrame] Failed to enable voice worker:', error)
+    })
   }
 
   const iframeUrl = sessionId ? getVoiceWorkerIframeUrl(sessionId) : null
@@ -69,16 +70,6 @@ export function VoiceWorkerFrame() {
           <span className={styles.voiceWorkerValue}>{enabled ? 'ON' : 'OFF'}</span>
         </div>
 
-        <div className={styles.voiceWorkerStatus}>
-          <span
-            className={`${styles.voiceWorkerStatus} ${
-              status === 'sent' ? styles.statusSent : styles.statusPending
-            }`}
-          >
-            {status === 'sent' ? 'Trip Details Sent' : 'Trip Details Not Sent'}
-          </span>
-        </div>
-
         <div className={styles.voiceWorkerHexagon} aria-live="polite">
           {enabled && iframeUrl ? (
             <iframe
@@ -91,6 +82,16 @@ export function VoiceWorkerFrame() {
           ) : (
             <div className={styles.voiceWorkerDisabled}>Voice Disabled</div>
           )}
+        </div>
+
+        <div className={styles.voiceWorkerStatusText} aria-live="polite">
+          <span
+            className={`${styles.voiceWorkerStatus} ${
+              status === 'sent' ? styles.statusSent : styles.statusPending
+            }`}
+          >
+            {status === 'sent' ? 'Trip Details Sent' : 'Trip Details Not Sent'}
+          </span>
         </div>
       </div>
     </div>

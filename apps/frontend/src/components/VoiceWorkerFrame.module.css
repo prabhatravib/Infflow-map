@@ -92,6 +92,10 @@
   opacity: 0.9;
 }
 
+.voiceWorkerStatusText {
+  margin-top: 1rem;
+}
+
 .voiceWorkerHexagon {
   width: 220px;
   height: 220px;
