@@ -1,4 +1,4 @@
-import { KeyboardEvent, useState } from 'react'
+import { KeyboardEvent, useEffect, useMemo, useState } from 'react'
 import { ApiConfig } from '../utils/apiConfig'
 import { renderTripOnMap } from '../utils/mapRenderer'
 import { TripData, TripDay, TripStop } from '../utils/tripTypes'
@@ -10,9 +10,31 @@ const DEFAULT_DAYS = 3
 const MIN_DAYS = 1
 const MAX_DAYS = 14
 
-export function TripControls() {
-  const [city, setCity] = useState(DEFAULT_CITY)
-  const [days, setDays] = useState(DEFAULT_DAYS)
+export interface TripSummary {
+  city: string
+  days: number
+}
+
+export interface TripControlsProps {
+  className?: string
+  onTripReady?: (summary: TripSummary) => void
+  initialCity?: string
+  initialDays?: number
+  ariaHidden?: boolean
+}
+
+export function TripControls({
+  className,
+  onTripReady,
+  initialCity,
+  initialDays,
+  ariaHidden = false,
+}: TripControlsProps) {
+  const normalizedInitialCity = useMemo(() => (initialCity?.trim() ? initialCity.trim() : DEFAULT_CITY), [initialCity])
+  const normalizedInitialDays = useMemo(() => clampDays(initialDays ?? DEFAULT_DAYS), [initialDays])
+
+  const [city, setCity] = useState(normalizedInitialCity)
+  const [days, setDays] = useState(normalizedInitialDays)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -58,6 +80,7 @@ export function TripControls() {
       await sendTripPlanToVoiceWorker(trip)
 
       setFeedback(`Itinerary ready for ${normalizedCity}`)
+      onTripReady?.({ city: normalizedCity, days: resolvedDays })
     } catch (fetchError) {
       console.error('[TripControls] Failed to create itinerary', fetchError)
       setError(fetchError instanceof Error ? fetchError.message : 'Failed to create itinerary')
@@ -90,10 +113,23 @@ export function TripControls() {
 
   const toggleLabel = isCollapsed ? 'Maximize trip planner' : 'Minimize trip planner'
 
+  const rootClassName = [styles.tripControls, isCollapsed ? styles.tripControlsCollapsed : null, className]
+    .filter(Boolean)
+    .join(' ')
+
+  useEffect(() => {
+    setCity((previous) => (previous === normalizedInitialCity ? previous : normalizedInitialCity))
+  }, [normalizedInitialCity])
+
+  useEffect(() => {
+    setDays((previous) => (previous === normalizedInitialDays ? previous : normalizedInitialDays))
+  }, [normalizedInitialDays])
+
   return (
     <section
-      className={`${styles.tripControls}${isCollapsed ? ` ${styles.tripControlsCollapsed}` : ''}`}
+      className={rootClassName}
       aria-label="Trip planner controls"
+      aria-hidden={ariaHidden}
     >
       <div className={styles.body}>
         <header className={styles.header}>

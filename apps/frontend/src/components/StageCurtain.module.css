@@ -1,0 +1,196 @@
+.stageWrapper {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  z-index: 1100;
+}
+
+.stage {
+  position: relative;
+  width: 320px;
+  min-height: 320px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  perspective: 2000px;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.25, 0.9, 0.3, 1.2);
+}
+
+.stageTransitioning {
+  pointer-events: none;
+}
+
+.stageVoice {
+  transform: translateY(-10px);
+}
+
+.planner,
+.voice {
+  width: 100%;
+}
+
+.curtainSide {
+  position: relative;
+  width: 100%;
+  grid-area: 1 / 1;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transition: transform 0.6s cubic-bezier(0.25, 0.9, 0.3, 1.2),
+    opacity 0.35s ease;
+}
+
+.front {
+  transform: rotateY(0deg) translateZ(0px);
+  opacity: 1;
+  z-index: 2;
+}
+
+.back {
+  transform: rotateY(-180deg) translateZ(0px);
+  opacity: 0;
+  z-index: 1;
+}
+
+.curtainTransitioning.front {
+  transform: rotateX(-6deg) translateY(-12px);
+  opacity: 0.3;
+}
+
+.curtainTransitioning.back {
+  transform: rotateY(0deg) translateY(20px) scale(0.95);
+  opacity: 0.25;
+}
+
+.curtainVisible {
+  opacity: 1;
+  transform: rotateY(0deg) translateZ(0);
+}
+
+.stageVoice .front {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.stageVoice .back {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 3;
+}
+
+.stageLifting .front {
+  animation: curtainLift 0.6s forwards;
+}
+
+.stageSettled .back {
+  animation: voiceReveal 0.5s forwards;
+}
+
+@keyframes curtainLift {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(-80%) scale(0.97);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-120%) scale(0.95);
+    opacity: 0;
+  }
+}
+
+@keyframes voiceReveal {
+  0% {
+    transform: translateY(32px) scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.voiceContainer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 0.5rem 0;
+}
+
+.summaryBar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.2rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.8);
+  color: #fff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.35);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summaryBar:hover,
+.summaryBar:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.4);
+  outline: none;
+}
+
+.stageWrapper[data-stage='planner'] .summaryBar {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stageWrapper[data-stage='voice'] .summaryBar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.stageWrapper[data-stage='transitioning'] .summaryBar {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .stageWrapper {
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%);
+  }
+
+  .stage {
+    width: min(320px, calc(100vw - 2.5rem));
+  }
+
+  .summaryBar {
+    width: min(320px, calc(100vw - 2.5rem));
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .curtainSide,
+  .summaryBar,
+  .stage {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .stageWrapper {
+    transform: none !important;
+  }
+}
+

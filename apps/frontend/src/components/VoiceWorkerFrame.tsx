@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   VOICE_WORKER_EVENTS,
   enableVoiceWorker,
@@ -8,9 +8,16 @@ import {
   isVoiceWorkerEnabled,
   TripPlanStatus,
 } from '../utils/voiceWorker'
+import { TripSummary } from './TripControls'
 import styles from './VoiceWorkerFrame.module.css'
 
-export function VoiceWorkerFrame() {
+interface VoiceWorkerFrameProps {
+  className?: string
+  ariaHidden?: boolean
+  summary?: TripSummary | null
+}
+
+export function VoiceWorkerFrame({ className, ariaHidden = false, summary }: VoiceWorkerFrameProps) {
   const [enabled, setEnabled] = useState<boolean>(() => isVoiceWorkerEnabled())
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [status, setStatus] = useState<TripPlanStatus>(() => getTripPlanStatus())
@@ -48,9 +55,17 @@ export function VoiceWorkerFrame() {
   }
 
   const iframeUrl = sessionId ? getVoiceWorkerIframeUrl(sessionId) : null
+  const summaryLabel = useMemo(() => {
+    if (!summary) return null
+    const { city, days } = summary
+    const dayLabel = days === 1 ? 'day' : 'days'
+    return `${city} · ${days} ${dayLabel}`
+  }, [summary])
+
+  const rootClassName = [styles.voiceWorkerContainer, className].filter(Boolean).join(' ')
 
   return (
-    <div className={styles.voiceWorkerContainer} aria-hidden="false">
+    <div className={rootClassName} aria-hidden={ariaHidden} data-active={!ariaHidden}>
       <div className={styles.voiceWorkerPanel}>
         <div className={styles.voiceWorkerToggle}>
           <span className={styles.voiceWorkerLabel}>Voice</span>
@@ -69,6 +84,12 @@ export function VoiceWorkerFrame() {
           </button>
           <span className={styles.voiceWorkerValue}>{enabled ? 'ON' : 'OFF'}</span>
         </div>
+
+        {summaryLabel && (
+          <div className={styles.voiceWorkerSummary} aria-live="polite">
+            {summaryLabel}
+          </div>
+        )}
 
         <div className={styles.voiceWorkerHexagon} aria-live="polite">
           {enabled && iframeUrl ? (

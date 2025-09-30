@@ -1,10 +1,19 @@
 import { MapInterface } from './components/MapInterface'
 import { ChatPanel } from './components/ChatPanel'
-import { TripControls } from './components/TripControls'
+import { TripControls, TripSummary } from './components/TripControls'
 import { VoiceWorkerFrame } from './components/VoiceWorkerFrame'
+import { StageCurtain } from './components/StageCurtain'
 import styles from './App.module.css'
 
 function App() {
+  const handleTripReady = (summary: TripSummary) => {
+    window.dispatchEvent(
+      new CustomEvent('trip:ready', {
+        detail: summary,
+      }),
+    )
+  }
+
   return (
     <div className={styles.app} id="app-root">
       <svg width="0" height="0" style={{ position: 'absolute' }}>
@@ -23,8 +32,11 @@ function App() {
 
       <MapInterface onMapReady={() => {}} />
       <ChatPanel />
-      <TripControls />
-      <VoiceWorkerFrame />
+      <StageCurtain
+        onTripReady={handleTripReady}
+        renderPlanner={(props) => <TripControls {...props} />}
+        renderVoice={(props) => <VoiceWorkerFrame {...props} />}
+      />
     </div>
   )
 }
