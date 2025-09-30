@@ -15,6 +15,8 @@ export interface NormalizedStop {
   lat: number
   lng: number
   placeType?: string
+  startTime?: string
+  endTime?: string
 }
 
 export interface NormalizedDay {
@@ -104,8 +106,11 @@ function buildPrompt(city: string, days: number): string {
     'You are a helpful travel planner. '
     + `Create a ${days}-day itinerary for ${city}. `
     + `All attractions and stops must be located near ${city}. Do not include any stops outside of the country. `
-    + 'Reply in strict JSON with the schema: '
-    + '{"days":[{"day":<int>,"stops":[{"name":<str>,"address":<str|null>,"lat":null,"lng":null}]}]}'
+    + 'The schedule must begin at 09:00 local time each day. '
+    + 'For every stop, provide a realistic startTime and endTime in 24-hour HH:MM format that reflect typical visit durations. Keep each day in chronological order so every stop starts at or after the previous stop ends, except for the compulsory inclusion of a lunch break. Do not plan for breakfast or dinner. Always account for reasonable travel time between stops (pad 10-45 minutes depending on distance and mode). The trip plan for the day overall should include sensible meal breaks (for example, leave ~12:30-13:30 for lunch when appropriate). '
+    + 'Allow occasional evening activities when they make sense for the destination. '
+    + 'Reply in strict JSON matching the schema: '
+    + '{"days":[{"day":<int>,"stops":[{"name":<str>,"address":<str|null>,"lat":null,"lng":null,"startTime":<"HH:MM">,"endTime":<"HH:MM">}]}]}'
   )
 }
 
@@ -155,6 +160,8 @@ async function normalizeItineraryResponse(raw: any, city: string, daysRequested:
       lat,
       lng,
       placeType: source.type ?? source.category ?? source.placeType ?? undefined,
+      startTime: source.startTime ?? source.start_time ?? undefined,
+      endTime: source.endTime ?? source.end_time ?? undefined,
     }
   }
 

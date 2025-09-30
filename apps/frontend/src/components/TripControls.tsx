@@ -188,6 +188,8 @@ interface ApiLocation {
   description?: string
   address?: string
   placeType?: string
+  startTime?: string
+  endTime?: string
 }
 
 function transformResponseToTripData(data: ApiItineraryResponse): TripData {
@@ -212,6 +214,8 @@ function transformResponseToTripData(data: ApiItineraryResponse): TripData {
       description: location.description,
       address: location.address,
       placeType: location.placeType,
+      startTime: location.startTime,
+      endTime: location.endTime,
     }
   }
 

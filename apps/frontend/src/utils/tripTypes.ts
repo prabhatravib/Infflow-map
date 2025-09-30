@@ -5,6 +5,8 @@ export interface TripStop {
   description?: string
   address?: string
   placeType?: string
+  startTime?: string
+  endTime?: string
 }
 
 export interface TripDay {

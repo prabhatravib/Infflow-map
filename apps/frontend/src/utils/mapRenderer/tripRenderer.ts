@@ -79,12 +79,14 @@ export function renderTripOnMap(trip: TripData) {
 
       const infoWindowContent = document.createElement('div')
       infoWindowContent.className = 'info-window-content'
+      const stopTiming = formatStopTiming(day.label || `Day ${dayIndex + 1}`, dayIndex, stopIndex, stop.startTime, stop.endTime)
+
       infoWindowContent.innerHTML = `
         <div class="info-window-header">
           <h4>${stop.name}</h4>
           <button type="button" class="info-window-close" aria-label="Close info window">×</button>
         </div>
-        <p>${day.label || `Day ${dayIndex + 1}`} • Stop ${stopIndex + 1}</p>
+        <p>${stopTiming}</p>
         ${stop.description ? `<p>${stop.description}</p>` : ''}
       `
 
@@ -132,6 +134,31 @@ export function renderTripOnMap(trip: TripData) {
   }
 
   setupDayControls(trip)
+}
+
+function formatStopTiming(
+  label: string,
+  dayIndex: number,
+  stopIndex: number,
+  start?: string,
+  end?: string
+): string {
+  const dayText = label || `Day ${dayIndex + 1}`
+  const stopText = `Stop ${stopIndex + 1}`
+
+  if (start && end) {
+    return `${dayText} • ${stopText} • ${start}–${end}`
+  }
+
+  if (start) {
+    return `${dayText} • ${stopText} • starts ${start}`
+  }
+
+  if (end) {
+    return `${dayText} • ${stopText} • ends ${end}`
+  }
+
+  return `${dayText} • ${stopText}`
 }
 
 function drawRoutes(trip: TripData) {
