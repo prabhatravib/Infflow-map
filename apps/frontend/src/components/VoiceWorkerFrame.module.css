@@ -1,7 +1,7 @@
 .voiceWorkerContainer {
   position: relative;
   width: 100%;
-  max-width: 240px;
+  max-width: 320px;
   pointer-events: auto;
   display: flex;
   justify-content: center;
@@ -13,13 +13,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  border-radius: 24px;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px) saturate(160%);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.35);
-  border: 1px solid rgba(15, 23, 42, 0.1);
+  gap: 1rem;
+  border-radius: 28px;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(14px) saturate(180%);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(15, 23, 42, 0.12);
   width: 100%;
   box-sizing: border-box;
 }
@@ -104,17 +104,23 @@
 }
 
 .voiceWorkerHexagon {
-  width: 200px;
-  height: 200px;
+  width: 280px;
+  height: 320px;
   position: relative;
   transform-origin: center;
+  overflow: hidden;
+  border-radius: 28px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.32);
+  background: rgba(15, 15, 15, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.voiceWorkerIframe,
-.voiceWorkerDisabled {
-  width: 100%;
-  height: 100%;
-  border: none;
+.voiceWorkerHexagon::after {
+  content: '';
+  position: absolute;
+  inset: 12px;
   border-radius: 24px;
   clip-path: polygon(
     50% 0%,
@@ -124,7 +130,52 @@
     8% 75%,
     8% 25%
   );
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.voiceWorkerInnerFrame {
+  width: 100%;
+  height: 100%;
+  border-radius: 28px;
+  clip-path: polygon(
+    50% 0%,
+    92% 25%,
+    92% 75%,
+    50% 100%,
+    8% 75%,
+    8% 25%
+  );
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+}
+
+.voiceWorkerIframe {
+  width: 320px;
+  height: 560px;
+  border: none;
+  background: transparent;
+  position: absolute;
+  top: -80px;
+  left: -30px;
+  transform: scale(0.78);
+  transform-origin: top center;
+}
+
+.voiceWorkerDisabled {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 28px;
+  clip-path: polygon(
+    50% 0%,
+    92% 25%,
+    92% 75%,
+    50% 100%,
+    8% 75%,
+    8% 25%
+  );
   background: rgba(15, 15, 15, 0.85);
   display: flex;
   align-items: center;
@@ -134,10 +185,6 @@
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-}
-
-.voiceWorkerIframe {
-  background: transparent;
 }
 
 .voiceWorkerSummary {

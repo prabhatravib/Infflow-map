@@ -69,9 +69,11 @@ export function StageCurtain({ renderPlanner, renderVoice, onTripReady }: StageC
   )
 
   const handleEditTrip = useCallback(() => {
+    clearTimers()
+    setCurrentSummary(null)
     setStageMode('planner')
     setAnimationFlag('idle')
-  }, [])
+  }, [clearTimers])
 
   const stageClassName = useMemo(() => {
     const base = [styles.stage]
@@ -121,11 +123,9 @@ export function StageCurtain({ renderPlanner, renderVoice, onTripReady }: StageC
           type="button"
           className={styles.summaryBar}
           onClick={handleEditTrip}
-          aria-label="Edit trip details"
+          aria-label="Reset trip planner"
         >
-          <span>{currentSummary.city}</span>
-          <span aria-hidden="true">·</span>
-          <span>{currentSummary.days} {currentSummary.days === 1 ? 'day' : 'days'}</span>
+          <span>Reset</span>
         </button>
       )}
     </div>

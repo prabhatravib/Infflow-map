@@ -127,8 +127,8 @@
 .summaryBar {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.2rem;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.8);
   color: #fff;

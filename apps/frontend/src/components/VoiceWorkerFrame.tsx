@@ -92,17 +92,19 @@ export function VoiceWorkerFrame({ className, ariaHidden = false, summary }: Voi
         )}
 
         <div className={styles.voiceWorkerHexagon} aria-live="polite">
-          {enabled && iframeUrl ? (
-            <iframe
-              title="Infflow Voice Companion"
-              src={iframeUrl}
-              className={styles.voiceWorkerIframe}
-              allow="microphone"
-              loading="lazy"
-            />
-          ) : (
-            <div className={styles.voiceWorkerDisabled}>Voice Disabled</div>
-          )}
+          <div className={styles.voiceWorkerInnerFrame}>
+            {enabled && iframeUrl ? (
+              <iframe
+                title="Infflow Voice Companion"
+                src={iframeUrl}
+                className={styles.voiceWorkerIframe}
+                allow="microphone"
+                loading="lazy"
+              />
+            ) : (
+              <div className={styles.voiceWorkerDisabled}>Voice Disabled</div>
+            )}
+          </div>
         </div>
 
         <div className={styles.voiceWorkerStatusText} aria-live="polite">
