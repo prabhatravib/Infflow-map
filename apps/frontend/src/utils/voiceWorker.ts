@@ -40,6 +40,19 @@ function getSessionStorage(): Storage | null {
   }
 }
 
+const persistedStatus = (() => {
+  const storage = getSessionStorage()
+  const saved = storage?.getItem(STATUS_STORAGE_KEY)
+  if (saved === 'sent' || saved === 'not-sent') {
+    return saved as TripPlanStatus
+  }
+  return null
+})()
+
+if (persistedStatus) {
+  tripPlanStatus = persistedStatus
+}
+
 function setGlobalSessionId(sessionId: string | null) {
   if (typeof window === 'undefined') return
   if (sessionId) {
@@ -60,6 +73,49 @@ function tryGetStoredTripPlan(): unknown | null {
     console.warn('[VoiceWorker] Failed to parse stored trip plan:', error)
     return null
   }
+}
+
+interface StoredPlanMeta {
+  hash: string
+  sessionId: string
+}
+
+function getStoredPlanMeta(storage = getSessionStorage()): StoredPlanMeta | null {
+  const raw = storage?.getItem(PLAN_HASH_KEY)
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed.hash === 'string' && typeof parsed.sessionId === 'string') {
+      return { hash: parsed.hash, sessionId: parsed.sessionId }
+    }
+    if (parsed && typeof parsed === 'string') {
+      return { hash: parsed, sessionId: '' }
+    }
+  } catch (error) {
+    if (typeof raw === 'string') {
+      return { hash: raw, sessionId: '' }
+    }
+    console.warn('[VoiceWorker] Failed to parse stored plan meta:', error)
+  }
+
+  if (typeof raw === 'string') {
+    return { hash: raw, sessionId: '' }
+  }
+
+  return null
+}
+
+function setStoredPlanMeta(meta: StoredPlanMeta, storage = getSessionStorage()) {
+  try {
+    storage?.setItem(PLAN_HASH_KEY, JSON.stringify(meta))
+  } catch (error) {
+    console.warn('[VoiceWorker] Failed to persist plan meta:', error)
+  }
+}
+
+function hasStoredPlan(): boolean {
+  return Boolean(getStoredPlanMeta())
 }
 
 function ensureSessionId(): string {
@@ -92,18 +148,36 @@ function clearPlanHash(storage = getSessionStorage()) {
   storage?.removeItem(PLAN_HASH_KEY)
 }
 
+function persistTripStatus(status: TripPlanStatus) {
+  const storage = getSessionStorage()
+  if (!storage) return
+  try {
+    storage.setItem(STATUS_STORAGE_KEY, status)
+  } catch (error) {
+    console.warn('[VoiceWorker] Failed to persist trip status:', error)
+  }
+}
+
 function setTripPlanStatus(status: TripPlanStatus) {
   tripPlanStatus = status
-  const storage = getSessionStorage()
-  storage?.setItem(STATUS_STORAGE_KEY, status)
+  persistTripStatus(status)
   if (status === 'not-sent') {
-    clearPlanHash(storage)
+    clearPlanHash()
   }
   dispatchVoiceWorkerEvent<VoiceWorkerStatusDetail>(EVENT_STATUS, { status })
 }
 
 export function getTripPlanStatus(): TripPlanStatus {
-  return tripPlanStatus
+  if (tripPlanStatus === 'sent') {
+    return 'sent'
+  }
+
+  if (hasStoredPlan()) {
+    tripPlanStatus = 'sent'
+    return 'sent'
+  }
+
+  return 'not-sent'
 }
 
 export function isVoiceWorkerEnabled(): boolean {
@@ -119,16 +193,21 @@ export async function enableVoiceWorker(): Promise<string> {
   setGlobalSessionId(newSessionId)
   storage?.setItem(SESSION_STORAGE_KEY, newSessionId)
 
-  setTripPlanStatus('not-sent')
+  const persistedMeta = getStoredPlanMeta(storage)
 
   dispatchVoiceWorkerEvent<VoiceWorkerEnabledDetail>(EVENT_ENABLED, {
     enabled: true,
     sessionId: newSessionId,
   })
 
-  const storedPlan = tryGetStoredTripPlan()
-  if (storedPlan) {
-    await sendTripPlanToVoiceWorker(storedPlan)
+  if (persistedMeta?.hash) {
+    setTripPlanStatus('sent')
+    const storedPlan = tryGetStoredTripPlan()
+    if (storedPlan) {
+      await sendTripPlanToVoiceWorker(storedPlan, { force: persistedMeta.sessionId !== newSessionId })
+    }
+  } else {
+    setTripPlanStatus('not-sent')
   }
 
   return newSessionId
@@ -142,16 +221,12 @@ export function disableVoiceWorker(): void {
   setGlobalSessionId(null)
   storage?.removeItem(SESSION_STORAGE_KEY)
 
-  setTripPlanStatus('not-sent')
-
   dispatchVoiceWorkerEvent<VoiceWorkerEnabledDetail>(EVENT_ENABLED, {
     enabled: false,
   })
 }
 
-export function markTripPlanPending(): void {
-  setTripPlanStatus('not-sent')
-}
+export function markTripPlanPending(): void {}
 
 function normalizePlanToText(plan: unknown): string {
   try {
@@ -174,6 +249,7 @@ export interface TripPlanPayload {
   type?: string
   textOverride?: string
   image?: string
+  force?: boolean
 }
 
 export async function sendTripPlanToVoiceWorker(
@@ -183,14 +259,14 @@ export async function sendTripPlanToVoiceWorker(
   const serializedPlan = options.textOverride || normalizePlanToText(plan)
   const planHash = getPlanFingerprint(serializedPlan)
   const storage = getSessionStorage()
-  const lastHash = storage?.getItem(PLAN_HASH_KEY)
+  const persistedMeta = getStoredPlanMeta(storage)
+  const sessionId = ensureSessionId()
 
-  if (lastHash === planHash) {
+  if (!options.force && persistedMeta?.hash === planHash && persistedMeta.sessionId === sessionId) {
     setTripPlanStatus('sent')
     return
   }
 
-  const sessionId = ensureSessionId()
   const payload = {
     sessionId,
     type: options.type || 'trip_plan',
@@ -212,7 +288,7 @@ export async function sendTripPlanToVoiceWorker(
       throw new Error(`Voice worker responded with ${response.status}`)
     }
 
-    storage?.setItem(PLAN_HASH_KEY, planHash)
+    setStoredPlanMeta({ hash: planHash, sessionId })
     setTripPlanStatus('sent')
   } catch (error) {
     console.error('[VoiceWorker] Failed to send trip plan:', error)
